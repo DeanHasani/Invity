@@ -9,7 +9,8 @@
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:api.github.com)",
       "Bash(npm install *)",
-      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\User\\\\Desktop\\\\invity\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)"
+      "Bash(Remove-Item -Recurse -Force \"c:\\\\Users\\\\User\\\\Desktop\\\\invity\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)",
+      "Bash(pnpm install *)"
     ]
   }
 }
