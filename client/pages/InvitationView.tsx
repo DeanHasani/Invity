@@ -27,7 +27,7 @@ function ErrorPage({
       <div className="text-7xl select-none">{emoji}</div>
       <h1
         className="text-5xl md:text-7xl uppercase leading-none"
-        style={{ fontFamily: "'Oi', serif", color: "#FF4D00" }}
+        style={{ fontFamily: "'Luckiest Guy', cursive", color: "#FF4D00" }}
       >
         {headline}
       </h1>
@@ -41,7 +41,7 @@ function ErrorPage({
         to="/"
         className="mt-2 px-10 py-4 text-xl uppercase tracking-wider transition-all"
         style={{
-          fontFamily: "'Oi', serif",
+          fontFamily: "'Luckiest Guy', cursive",
           border: "2px solid #FF4D00",
           color: "#FF4D00",
         }}
@@ -93,10 +93,12 @@ export default function InvitationView() {
           id:       data.id,
           title:    data.title,
           message:  data.message,
-          designId: data.design_id,
-          effectId: data.effect_id,
-          date:     data.date     ?? undefined,
-          location: data.location ?? undefined,
+          designId:  data.design_id,
+          effectId:  data.effect_id,
+          fontId:    data.font_id    ?? undefined,
+          fontColor: data.font_color ?? undefined,
+          date:      data.date     ?? undefined,
+          location:  data.location ?? undefined,
         });
         setState("ok");
       });
@@ -120,7 +122,7 @@ export default function InvitationView() {
   if (state === "loading") return (
     <div
       className="h-screen w-screen flex items-center justify-center text-4xl animate-pulse uppercase tracking-widest"
-      style={{ background: "#FF4D00", color: "#fff", fontFamily: "'Oi', serif" }}
+      style={{ background: "#FF4D00", color: "#fff", fontFamily: "'Luckiest Guy', cursive" }}
     >
       Loading...
     </div>
@@ -131,7 +133,7 @@ export default function InvitationView() {
       className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-8"
       style={{ background: "#FF4D00", color: "#fff" }}
     >
-      <h1 className="text-5xl md:text-6xl uppercase" style={{ fontFamily: "'Oi', serif" }}>
+      <h1 className="text-5xl md:text-6xl uppercase" style={{ fontFamily: "'Luckiest Guy', cursive" }}>
         404 — NOT FOUND
       </h1>
       <p className="text-lg opacity-70" style={{ fontFamily: "'Montserrat', sans-serif" }}>
@@ -140,7 +142,7 @@ export default function InvitationView() {
       <Link
         to="/"
         className="bg-white text-[#FF4D00] text-2xl py-5 px-12 hover:bg-white/90 transition-colors uppercase tracking-wider"
-        style={{ fontFamily: "'Oi', serif" }}
+        style={{ fontFamily: "'Luckiest Guy', cursive" }}
       >
         Create Your Own
       </Link>

@@ -31,6 +31,8 @@ export interface Invitation {
     | "bouncing";
   date?: string;
   location?: string;
+  fontId?: string;
+  fontColor?: string;
 }
 
 export type CreateInvitationRequest = Omit<Invitation, "id">;

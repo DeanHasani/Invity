@@ -108,7 +108,7 @@ interface DecryptedTextProps {
   shuffleSpeed?: number;
 }
 
-function DecryptedText({
+export function DecryptedText({
   text,
   className,
   style,
@@ -252,7 +252,7 @@ function PlayfulCanvas() {
         x: dx,
         rotation: dr,
         duration: 8 + Math.random() * 9,
-        delay: Math.random() * 12,
+        delay: Math.random() * 3,
         repeat: -1,
         ease: "none",
       });
@@ -404,7 +404,7 @@ function NaturalCanvas() {
         x: dx,
         rotation: dr,
         duration: 10 + Math.random() * 10,
-        delay: Math.random() * 12,
+        delay: Math.random() * 3,
         repeat: -1,
         ease: "none",
       });
@@ -1090,7 +1090,7 @@ const EFFECT_MAP: Record<string, { animationId: string; textEffectId: string }> 
   bouncing:  { animationId: "pop",      textEffectId: "bounce"  },
 };
 
-const CANVAS_MAP: Record<string, React.FC> = {
+export const CANVAS_MAP: Record<string, React.FC> = {
   minimal:    MinimalCanvas,
   playful:    PlayfulCanvas,
   elegant:    ElegantCanvas,
@@ -1101,6 +1101,19 @@ const CANVAS_MAP: Record<string, React.FC> = {
   futuristic: FuturisticCanvas,
   cyberpunk:  CyberpunkCanvas,
   hacked:     HackedCanvas,
+};
+
+export const DESIGN_BG: Record<string, string> = {
+  minimal:    "#f5f0e8",
+  playful:    "#7B2CBF",
+  elegant:    "#070707",
+  modernist:  "#f0f0e0",
+  love:       "#b52a2a",
+  natural:    "#1a2e14",
+  scary:      "#04040c",
+  futuristic: "#020b18",
+  cyberpunk:  "#08000f",
+  hacked:     "#010f04",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1142,27 +1155,39 @@ function RsvpZone({ designId, onAccept }: { designId: string; onAccept?: () => v
             // Fix: font-[Oi,serif] is not valid Tailwind — use inline style
             // eslint-disable-next-line react/no-unknown-property
           >
-            <span style={{ fontFamily: "'Oi', serif" }}>✓ I'll Be There</span>
+            <span style={{ fontFamily: "'Luckiest Guy', cursive" }}>✓ I'll Be There</span>
           </button>
           <button
             onClick={() => respond("decline")}
             style={declineSty}
             className="px-8 py-3 text-base md:text-lg uppercase tracking-wider cursor-pointer hover:opacity-75 transition-opacity"
           >
-            <span style={{ fontFamily: "'Oi', serif" }}>✗ Can't Make It</span>
+            <span style={{ fontFamily: "'Luckiest Guy', cursive" }}>✗ Can't Make It</span>
           </button>
         </div>
       )}
       <div
         ref={confRef}
         className="text-xl md:text-3xl uppercase tracking-widest text-center"
-        style={{ opacity: status === "idle" ? 0 : 1, fontFamily: "'Oi', serif" }}
+        style={{ opacity: status === "idle" ? 0 : 1, fontFamily: "'Luckiest Guy', cursive" }}
       >
         {status === "accept" ? "🎉 See You There!" : status === "decline" ? "We'll Miss You :(" : ""}
       </div>
     </>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Font map — fontId → CSS font-family string
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FONT_FAMILY: Record<string, string> = {
+  funky:    "'Fontdiner Swanky', cursive",
+  stampede: "'Vast Shadow', serif",
+  militant: "'Black Ops One', sans-serif",
+  velvet:   "'Lobster', cursive",
+  sleek:    "'Basic', sans-serif",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main component
@@ -1481,7 +1506,6 @@ export default function Postcard({
           0%,100% { opacity:.6; filter:hue-rotate(0deg);  }
           50%     { opacity:1;  filter:hue-rotate(40deg); }
         }
-        .event-title { font-family:'Oi',serif; }
         .word-span, .title-word, .msg-word { display:inline-block; }
       `}</style>
 
@@ -1527,7 +1551,13 @@ export default function Postcard({
 
           <h1
             className="event-title leading-[0.95] uppercase"
-            style={{ fontSize: titleFontSize, letterSpacing: "-0.02em", opacity: 0 }}
+            style={{
+              fontSize: titleFontSize,
+              letterSpacing: "-0.02em",
+              opacity: 0,
+              fontFamily: FONT_FAMILY[invitation.fontId ?? "funky"] ?? "'Luckiest Guy', cursive",
+              ...(invitation.fontColor ? { color: invitation.fontColor } : {}),
+            }}
           >
             {textEffectId === "decrypt" && animationId !== "assemble" ? (
               /* DecryptedText: characters cycle through random glitch chars then resolve */

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { CANVAS_MAP, DESIGN_BG, DecryptedText } from "@/components/Postcard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -40,11 +41,32 @@ const EFFECTS = [
   { id: "bouncing",  label: "Bouncing",  desc: "Pops in with energetic rhythmic bounce" },
 ];
 
+const FONTS = [
+  { id: "funky",    label: "Funky",    family: "'Fontdiner Swanky', cursive" },
+  { id: "stampede", label: "Stampede", family: "'Vast Shadow', serif" },
+  { id: "militant", label: "Militant", family: "'Black Ops One', sans-serif" },
+  { id: "velvet",   label: "Velvet",   family: "'Lobster', cursive" },
+  { id: "sleek",    label: "Sleek",    family: "'Basic', sans-serif" },
+  { id: "bloom",    label: "Bloom",    family: "'Indie Flower', cursive" },
+  { id: "slash",    label: "Slash",    family: "'Rubik Glitch', sans-serif" },
+  { id: "fierce",   label: "Fierce",   family: "'Spicy Rice', cursive" },
+];
+
+const COLOR_SWATCHES = [
+  "#ffffff", "#f5f0e8", "#1a1a1a", "#c9a84c",
+  "#22d3ee", "#60a5fa", "#ff00ff", "#c084fc",
+  "#00ff55", "#34d399", "#f43f5e", "#ff9999",
+  "#fbbf24", "#f87171",
+];
+
+const LG_FONT = "'Luckiest Guy', cursive";
+
 const STEP_PHRASES: Record<number, string[]> = {
   1: ["LET'S START", "HERE WE GO", "LET'S BEGIN", "KICK IT OFF"],
   2: ["PICK A LOOK", "DESIGN TIME", "STYLE IT", "LOOKING GOOD"],
-  3: ["PICK YOUR VIBE", "SET THE EFFECT", "CHOOSE THE MOOD", "MAKE IT YOURS"],
-  4: ["YOU DID IT!", "PARTY TIME!", "READY TO SEND", "BOOM!"],
+  3: ["FONT TIME", "YOUR TYPEFACE", "STYLE YOUR TEXT", "MAKE IT POP", "IT'S FONT O'CLOCK", "DRESS IT UP", "CHOOSE YOUR LETTERS", "MAKE IT SNAPPY"],
+  4: ["PICK YOUR VIBE", "SET THE EFFECT", "CHOOSE THE MOOD", "MAKE IT YOURS"],
+  5: ["YOU DID IT!", "PARTY TIME!", "READY TO SEND", "BOOM!"],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +105,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
       let m = v.month + delta, y = v.year;
       if (m < 0)  { m = 11; y--; }
       if (m > 11) { m = 0;  y++; }
-      // never go before current month
       if (y < today.getFullYear() || (y === today.getFullYear() && m < today.getMonth())) return v;
       return { month: m, year: y };
     });
@@ -97,7 +118,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
 
   return (
     <div ref={wrapRef} className="relative">
-      {/* Trigger — mirrors the underline Input style */}
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
@@ -106,7 +126,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
         <span className={cn("flex-1 leading-none", !value && "text-white/20")}>
           {value || "e.g. Saturday, July 12"}
         </span>
-        {/* Calendar icon */}
         <svg className="opacity-40 flex-shrink-0 mb-0.5" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <rect x="1.5" y="3" width="13" height="11.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
           <path d="M1.5 6.5h13" stroke="currentColor" strokeWidth="1.3"/>
@@ -114,13 +133,11 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
         </svg>
       </button>
 
-      {/* Dropdown calendar */}
       {open && (
         <div
           className="absolute top-full left-0 mt-3 z-50 shadow-2xl w-72"
           style={{ background: "#1a0a00", border: "2px solid rgba(255,77,0,0.5)", fontFamily: "'Montserrat', sans-serif" }}
         >
-          {/* Month header */}
           <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,77,0,0.2)" }}>
             <button
               type="button"
@@ -142,7 +159,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
           </div>
 
           <div className="px-3 py-3">
-            {/* Day-of-week headers */}
             <div className="grid grid-cols-7 mb-1">
               {DAY_LABELS.map(d => (
                 <div key={d} className="text-center text-[9px] font-bold tracking-wider pb-2" style={{ color: "rgba(255,77,0,0.55)" }}>
@@ -151,7 +167,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
               ))}
             </div>
 
-            {/* Day cells */}
             <div className="grid grid-cols-7 gap-0.5">
               {cells.map((day, i) => {
                 if (!day) return <div key={i} />;
@@ -181,7 +196,6 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
             </div>
           </div>
 
-          {/* Clear */}
           {value && (
             <button
               type="button"
@@ -199,23 +213,183 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// TitleEffectPreview — animates the title with the chosen effect (step 4)
+// Mounted fresh via key prop on every effect selection so animation replays.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TitleEffectPreview({
+  title,
+  fontFamily,
+  fontColor,
+  effectId,
+  startDelay = 0,
+}: {
+  title: string;
+  fontFamily: string;
+  fontColor: string;
+  effectId: string;
+  startDelay?: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const ctxRef  = useRef<gsap.Context | null>(null);
+  const display = title.trim() || "YOUR TITLE";
+
+  // Empty deps — component remounts via key prop whenever effectId changes
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || effectId === "decrypted") return;
+    if (ctxRef.current) ctxRef.current.revert();
+    let tid: ReturnType<typeof setTimeout>;
+
+    const runAnim = () => {
+      if (ctxRef.current) ctxRef.current.revert();
+      const words = Array.from(el.querySelectorAll<HTMLElement>(".ep-word"));
+
+      ctxRef.current = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+        switch (effectId) {
+          case "static":
+            gsap.set(el, { y: 50, opacity: 0 });
+            tl.to(el, { y: 0, opacity: 1, duration: 1.2 });
+            break;
+
+          case "glowing":
+            gsap.set(el, { scale: 0.06, opacity: 0 });
+            tl.to(el, { scale: 1, opacity: 1, duration: 1.3, ease: "expo.out" });
+            tl.to(el, {
+              textShadow: `0 0 40px ${fontColor},0 0 80px ${fontColor}80`,
+              duration: 2, repeat: -1, yoyo: true, ease: "sine.inOut",
+            }, "+=0.3");
+            break;
+
+          case "glitching": {
+            gsap.set(el, { scaleX: 4.5, scaleY: 0.05, opacity: 0, filter: "blur(22px)" });
+            tl.to(el, { scaleX: 1, scaleY: 1, opacity: 1, filter: "blur(0px)", duration: 1.0, ease: "expo.out" });
+            const doG = () => {
+              if (!wrapRef.current) return;
+              const ws = Array.from(wrapRef.current.querySelectorAll<HTMLElement>(".ep-word"));
+              if (!ws.length) return;
+              const w = ws[Math.floor(Math.random() * ws.length)];
+              gsap.timeline()
+                .to(w, { x: 6, duration: 0.04, ease: "none" })
+                .to(w, { x: -6, duration: 0.04 })
+                .to(w, { x: 4, duration: 0.04 })
+                .to(w, { x: 0, duration: 0.04 });
+              w.style.textShadow = "4px 0 #ff00ff,-4px 0 #00ffff";
+              setTimeout(() => { if (w) w.style.textShadow = ""; }, 150);
+              setTimeout(doG, 350 + Math.random() * 600);
+            };
+            setTimeout(doG, 1100);
+            break;
+          }
+
+          case "smoke":
+            gsap.set(el, { x: -150, opacity: 0, filter: "blur(14px)" });
+            tl.to(el, { x: 0, opacity: 1, filter: "blur(0px)", duration: 1.3 });
+            if (words.length)
+              tl.to(words, {
+                y: "random(-12,12)", opacity: "random(0.78,1)",
+                duration: "random(2,4)", repeat: -1, yoyo: true,
+                ease: "sine.inOut", stagger: { amount: 0.8, from: "random" },
+              }, "+=0.2");
+            break;
+
+          case "assemble": {
+            if (!words.length) break;
+            gsap.set(words, { opacity: 0 });
+            const EDGES = [
+              { x: -300, y: 0 }, { x: 300, y: 0 },
+              { x: 0, y: -200 }, { x: 0, y: 200 },
+            ];
+            words.forEach((w, i) => {
+              const e = EDGES[i % EDGES.length];
+              gsap.set(w, { x: e.x, y: e.y, rotation: (Math.random() - 0.5) * 40 });
+              tl.to(w, { x: 0, y: 0, opacity: 1, rotation: 0, duration: 0.65, ease: "back.out(1.3)" }, i * 0.1);
+            });
+            break;
+          }
+
+          case "bouncing":
+            gsap.set(el, { scale: 0, opacity: 0 });
+            tl.to(el, { scale: 1, opacity: 1, duration: 0.9, ease: "back.out(1.7)" });
+            tl.to(el, { y: -20, scaleY: 1.05, scaleX: 0.96, duration: 0.45, repeat: -1, yoyo: true, ease: "power2.inOut" }, "+=0.2");
+            break;
+
+          default:
+            gsap.set(el, { opacity: 0 });
+            tl.to(el, { opacity: 1, duration: 0.8 });
+        }
+      });
+    };
+
+    tid = setTimeout(runAnim, startDelay);
+
+    return () => { clearTimeout(tid); ctxRef.current?.revert(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const textStyle: React.CSSProperties = {
+    fontFamily,
+    color: fontColor,
+    fontSize: "clamp(1.4rem, 5.5vw, 2.8rem)",
+    letterSpacing: "-0.02em",
+    lineHeight: "1",
+  };
+
+  return (
+    <div
+      className="w-full flex items-center justify-center overflow-hidden mb-1"
+      style={{ height: 120, background: "rgba(0,0,0,0.32)", border: "1px solid rgba(255,255,255,0.12)" }}
+    >
+      {effectId === "decrypted" ? (
+        <DecryptedText
+          text={display}
+          delay={startDelay + 200}
+          charDelay={70}
+          shuffleSpeed={55}
+          className="uppercase text-center px-6"
+          charClassName="ep-word inline-block"
+          style={textStyle}
+        />
+      ) : (
+        <div ref={wrapRef} className="uppercase text-center px-6" style={textStyle}>
+          {display.split(" ").filter(Boolean).map((word, i, arr) => (
+            <span
+              key={i}
+              className="ep-word inline-block"
+              style={{ marginRight: i < arr.length - 1 ? "0.22em" : 0 }}
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Index() {
   const [step, setStep] = useState(1);
-  const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0 });
+  const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [effectPreviewKey, setEffectPreviewKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<CreateInvitationRequest>({
-    title:    "",
-    message:  "",
-    date:     "",
-    location: "",
-    designId: "minimal",
-    effectId: "static",
+    title:     "",
+    message:   "",
+    date:      "",
+    location:  "",
+    designId:  "minimal",
+    effectId:  "static",
+    fontId:    "funky",
+    fontColor: "#ffffff",
   });
 
   useEffect(() => { randomizePhrases(); }, []);
@@ -226,6 +400,7 @@ export default function Index() {
       2: Math.floor(Math.random() * STEP_PHRASES[2].length),
       3: Math.floor(Math.random() * STEP_PHRASES[3].length),
       4: Math.floor(Math.random() * STEP_PHRASES[4].length),
+      5: Math.floor(Math.random() * STEP_PHRASES[5].length),
     });
   };
 
@@ -278,6 +453,8 @@ export default function Index() {
           message:    data.message,
           design_id:  data.designId,
           effect_id:  data.effectId,
+          font_id:    data.fontId    ?? null,
+          font_color: data.fontColor ?? null,
           date:       data.date     || null,
           location:   data.location || null,
           creator_id: creatorId,
@@ -288,19 +465,21 @@ export default function Index() {
       if (error) throw error;
       return {
         invitation: {
-          id:       row.id,
-          title:    row.title,
-          message:  row.message,
-          designId: row.design_id,
-          effectId: row.effect_id,
-          date:     row.date     ?? undefined,
-          location: row.location ?? undefined,
+          id:        row.id,
+          title:     row.title,
+          message:   row.message,
+          designId:  row.design_id,
+          effectId:  row.effect_id,
+          fontId:    row.font_id    ?? undefined,
+          fontColor: row.font_color ?? undefined,
+          date:      row.date     ?? undefined,
+          location:  row.location ?? undefined,
         } as Invitation,
       };
     },
     onSuccess: (data) => {
       setCreatedInvitation(data.invitation);
-      animateStep(true, 4);
+      animateStep(true, 5);
       toast.success("Invitation created! 🎉");
     },
     onError: (err: Error & { code?: string }) => {
@@ -326,7 +505,7 @@ export default function Index() {
     el.style.cssText = "position:absolute;left:-9999px";
     document.body.appendChild(el);
     el.select();
-    document.execCommand("copy");
+    (document as any).execCommand("copy");
     document.body.removeChild(el);
   };
 
@@ -337,7 +516,7 @@ export default function Index() {
         setStep(1);
         setCreatedInvitation(null);
         randomizePhrases();
-        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static" });
+        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
         gsap.fromTo(containerRef.current, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
       },
     });
@@ -350,10 +529,10 @@ export default function Index() {
       style={{ background: "#FF4D00", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
     >
       <div className="text-7xl">⏰</div>
-      <h1 className="text-5xl md:text-7xl uppercase leading-none" style={{ fontFamily: "'Oi', serif" }}>
+      <h1 className="text-5xl md:text-7xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
         WHOOPSIE
       </h1>
-      <p className="text-xl md:text-2xl uppercase tracking-widest font-bold" style={{ fontFamily: "'Oi', serif" }}>
+      <p className="text-xl md:text-2xl uppercase tracking-widest font-bold" style={{ fontFamily: LG_FONT }}>
         ONE LINK A DAY
       </p>
       <p className="text-base opacity-70 max-w-sm">
@@ -362,7 +541,7 @@ export default function Index() {
       <button
         onClick={() => setRateLimited(false)}
         className="mt-2 bg-white text-[#FF4D00] text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
-        style={{ fontFamily: "'Oi', serif" }}
+        style={{ fontFamily: LG_FONT }}
       >
         Go Back
       </button>
@@ -378,23 +557,46 @@ export default function Index() {
 
   const INPUT_CLS = "bg-transparent border-white/40 border-t-0 border-x-0 border-b-2 rounded-none px-0 placeholder:text-white/20 focus-visible:ring-0 focus-visible:border-white transition-all text-white";
 
+  const selectedFont = FONTS.find(f => f.id === formData.fontId) ?? FONTS[0];
+  const ActiveCanvas = step === 2 ? (CANVAS_MAP[formData.designId] ?? null) : null;
+
   return (
-    <div className="min-h-screen w-full bg-[#FF4D00] text-white flex flex-col select-none relative overflow-x-hidden" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div
+      className="min-h-screen w-full text-white flex flex-col select-none relative overflow-x-hidden"
+      style={{
+        fontFamily: "'Montserrat', sans-serif",
+        backgroundColor: step === 2 ? (DESIGN_BG[formData.designId] ?? "#FF4D00") : "#FF4D00",
+        transition: "background-color 0.4s ease",
+      }}
+    >
+
+      {/* ── Design canvas background (step 2 only) ── */}
+      {ActiveCanvas && (
+        <div
+          key={formData.designId}
+          className="fixed inset-0 overflow-hidden pointer-events-none"
+          style={{ zIndex: 1, animation: "canvasFadeIn 0.45s ease forwards" }}
+        >
+          <ActiveCanvas />
+          {/* Overlay keeps white UI text readable against any design */}
+          <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.38)" }} />
+        </div>
+      )}
 
       {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 p-4 md:p-8 flex justify-between items-start md:items-center z-40 pointer-events-none">
         <h1
           className="text-2xl md:text-4xl tracking-tighter cursor-default leading-none uppercase opacity-90 pointer-events-auto"
-          style={{ fontFamily: "'Oi', serif" }}
+          style={{ fontFamily: LG_FONT }}
         >
           INVITY
         </h1>
         <div className="text-right pointer-events-auto">
           <p className="font-bold uppercase text-[11px] md:text-sm tracking-widest opacity-90">
-            {STEP_PHRASES[step][phraseIndices[step]]}
+            {STEP_PHRASES[step]?.[phraseIndices[step]] ?? ""}
           </p>
           <div className="flex gap-1 mt-1.5 justify-end">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4, 5].map(i => (
               <div
                 key={i}
                 className={cn("h-1 rounded-full transition-all duration-300", step >= i ? "bg-white w-6" : "bg-white/30 w-4")}
@@ -405,7 +607,7 @@ export default function Index() {
       </header>
 
       {/* ── Side nav buttons — hidden on mobile, shown md+ ── */}
-      {step < 4 && (
+      {step < 5 && (
         <>
           {step > 1 && (
             <button
@@ -415,14 +617,14 @@ export default function Index() {
             >
               <span
                 className="-rotate-90 whitespace-nowrap tracking-widest uppercase group-hover:scale-110 transition-transform text-xl"
-                style={{ fontFamily: "'Oi', serif" }}
+                style={{ fontFamily: LG_FONT }}
               >
                 BACK
               </span>
             </button>
           )}
           <button
-            onClick={step === 3 ? () => createMutation.mutate(formData) : nextStep}
+            onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
             disabled={createMutation.isPending}
             className={cn(
               "hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 w-14 h-[38vh] transition-all duration-300 group items-center justify-center border-y border-l",
@@ -430,26 +632,26 @@ export default function Index() {
                 ? "bg-white/20 border-white/20 cursor-not-allowed"
                 : "bg-white/10 hover:bg-white text-white hover:text-[#FF4D00] border-white/20 hover:border-white"
             )}
-            aria-label={step === 3 ? "Create" : "Next step"}
+            aria-label={step === 4 ? "Create" : "Next step"}
           >
             <span
               className="rotate-90 whitespace-nowrap tracking-widest uppercase group-hover:scale-110 transition-transform text-xl"
-              style={{ fontFamily: "'Oi', serif" }}
+              style={{ fontFamily: LG_FONT }}
             >
-              {createMutation.isPending ? "..." : step === 3 ? "CREATE!" : "NEXT"}
+              {createMutation.isPending ? "..." : step === 4 ? "CREATE!" : "NEXT"}
             </span>
           </button>
         </>
       )}
 
       {/* ── Main content ── */}
-      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-24 relative">
+      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-24 relative" style={{ zIndex: 2 }}>
         <div ref={containerRef} className="max-w-xl w-full">
 
           {/* ── STEP 1: Event details ── */}
           {step === 1 && (
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: "'Oi', serif" }}>
+              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
                 TELL US ABOUT<br />YOUR EVENT.
               </h2>
 
@@ -500,7 +702,7 @@ export default function Index() {
           {/* ── STEP 2: Design ── */}
           {step === 2 && (
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: "'Oi', serif" }}>
+              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
                 PICK A<br />DESIGN.
               </h2>
               <div className="grid grid-cols-1 gap-3">
@@ -516,7 +718,7 @@ export default function Index() {
                         : "opacity-65 hover:opacity-95"
                     )}
                   >
-                    <span className="text-xl md:text-2xl uppercase" style={{ fontFamily: "'Oi', serif" }}>{d.label}</span>
+                    <span className="text-xl md:text-2xl uppercase" style={{ fontFamily: LG_FONT }}>{d.label}</span>
                     {formData.designId === d.id && <Check className="w-6 h-6" />}
                   </button>
                 ))}
@@ -524,39 +726,146 @@ export default function Index() {
             </div>
           )}
 
-          {/* ── STEP 3: Effect (merged animation + text effect) ── */}
+          {/* ── STEP 3: Font & Color ── */}
           {step === 3 && (
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: "'Oi', serif" }}>
-                PICK YOUR<br />EFFECT.
+              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
+                PICK YOUR<br />TEXT STYLE.
               </h2>
+
               <div className="grid grid-cols-1 gap-3">
-                {EFFECTS.map(e => (
-                  <button
-                    key={e.id}
-                    onClick={() => setFormData({ ...formData, effectId: e.id as any })}
-                    className={cn(
-                      "p-5 md:p-6 transition-all duration-200 flex items-center justify-between border-2 text-left",
-                      formData.effectId === e.id
-                        ? "bg-white text-[#FF4D00] border-white"
-                        : "border-white/30 opacity-65 hover:opacity-95"
-                    )}
-                  >
-                    <div>
-                      <div className="text-xl md:text-2xl uppercase" style={{ fontFamily: "'Oi', serif" }}>{e.label}</div>
-                      <div className="text-[11px] mt-0.5 opacity-60 font-medium">{e.desc}</div>
+                {FONTS.map(f => {
+                  const isSel = formData.fontId === f.id;
+                  return (
+                    <div key={f.id}>
+                      <button
+                        onClick={() => setFormData({ ...formData, fontId: f.id })}
+                        className={cn(
+                          "w-full p-5 md:p-6 transition-all duration-200 flex items-center justify-between border-2 text-left",
+                          isSel
+                            ? "bg-white text-[#FF4D00] border-white"
+                            : "border-white/30 opacity-65 hover:opacity-95"
+                        )}
+                      >
+                        <span className="text-2xl md:text-3xl uppercase" style={{ fontFamily: f.family }}>
+                          {f.label}
+                        </span>
+                        {isSel && <Check className="w-6 h-6 flex-shrink-0 ml-4" />}
+                      </button>
+
+                      {/* Inline accordion — expands under the selected font */}
+                      <div className={cn(
+                        "grid transition-all duration-300",
+                        isSel ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      )}>
+                        <div className="overflow-hidden">
+                          <div className="border-x-2 border-b-2 border-white px-4 pt-4 pb-3 space-y-3 bg-white/5">
+                            {/* Title preview in this font */}
+                            <p
+                              className="uppercase text-center leading-none"
+                              style={{
+                                fontFamily: f.family,
+                                color: formData.fontColor,
+                                fontSize: "clamp(1.6rem, 6vw, 2.8rem)",
+                                letterSpacing: "-0.02em",
+                              }}
+                            >
+                              {formData.title || "PREVIEW"}
+                            </p>
+                            {/* Color swatches — smaller boxes with black border */}
+                            <div className="flex flex-wrap gap-2">
+                              {COLOR_SWATCHES.map(c => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, fontColor: c })}
+                                  title={c}
+                                  style={{
+                                    background: c,
+                                    width: 26,
+                                    height: 26,
+                                    outline: "2px solid rgba(0,0,0,0.55)",
+                                    outlineOffset: "-1px",
+                                  }}
+                                  className={cn(
+                                    "transition-all duration-200",
+                                    formData.fontColor === c
+                                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#FF4D00] scale-110"
+                                      : "opacity-80 hover:opacity-100 hover:scale-105"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    {formData.effectId === e.id && <Check className="w-6 h-6 flex-shrink-0 ml-4" />}
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* ── STEP 4: Share ── */}
-          {step === 4 && createdInvitation && (
+          {/* ── STEP 4: Effect ── */}
+          {step === 4 && (
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: "'Oi', serif" }}>
+              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
+                PICK YOUR<br />EFFECT.
+              </h2>
+
+              <div className="grid grid-cols-1 gap-3">
+                {EFFECTS.map(e => {
+                  const isSel = formData.effectId === e.id;
+                  return (
+                    <div key={e.id}>
+                      <button
+                        onClick={() => {
+                          setFormData({ ...formData, effectId: e.id as any });
+                          setEffectPreviewKey(k => k + 1);
+                        }}
+                        className={cn(
+                          "w-full p-5 md:p-6 transition-all duration-200 flex items-center justify-between border-2 text-left",
+                          isSel
+                            ? "bg-white text-[#FF4D00] border-white"
+                            : "border-white/30 opacity-65 hover:opacity-95"
+                        )}
+                      >
+                        <div>
+                          <div className="text-xl md:text-2xl uppercase" style={{ fontFamily: LG_FONT }}>{e.label}</div>
+                          <div className="text-[11px] mt-0.5 opacity-60 font-medium">{e.desc}</div>
+                        </div>
+                        {isSel && <Check className="w-6 h-6 flex-shrink-0 ml-4" />}
+                      </button>
+
+                      {/* Inline accordion — animation preview expands under selected effect */}
+                      <div className={cn(
+                        "grid transition-all duration-300",
+                        isSel ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                      )}>
+                        <div className="overflow-hidden">
+                          {isSel && (
+                            <TitleEffectPreview
+                              key={`${e.id}-${effectPreviewKey}`}
+                              title={formData.title}
+                              fontFamily={selectedFont.family}
+                              fontColor={formData.fontColor ?? "#ffffff"}
+                              effectId={e.id}
+                              startDelay={320}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 5: Share ── */}
+          {step === 5 && createdInvitation && (
+            <div className="space-y-6">
+              <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
                 YOU'RE READY<br />TO PARTY!
               </h2>
 
@@ -583,7 +892,7 @@ export default function Index() {
                 <button
                   onClick={copyLink}
                   className="w-full bg-black text-white py-3 text-lg uppercase tracking-wider hover:bg-black/85 transition-colors"
-                  style={{ fontFamily: "'Oi', serif" }}
+                  style={{ fontFamily: LG_FONT }}
                 >
                   Copy Link
                 </button>
@@ -594,7 +903,7 @@ export default function Index() {
                   to={`/${createdInvitation.id}`}
                   target="_blank"
                   className="bg-black text-white py-5 flex items-center justify-center hover:bg-black/85 transition-colors text-lg uppercase tracking-wider"
-                  style={{ fontFamily: "'Oi', serif" }}
+                  style={{ fontFamily: LG_FONT }}
                 >
                   PREVIEW
                 </Link>
@@ -602,7 +911,7 @@ export default function Index() {
                   onClick={resetBuilder}
                   variant="outline"
                   className="border-white text-white bg-transparent hover:bg-white/10 py-5 h-auto rounded-none text-lg uppercase tracking-wider"
-                  style={{ fontFamily: "'Oi', serif" }}
+                  style={{ fontFamily: LG_FONT }}
                 >
                   CREATE NEW
                 </Button>
@@ -614,13 +923,13 @@ export default function Index() {
       </main>
 
       {/* ── Mobile bottom nav ── */}
-      {step < 4 && (
+      {step < 5 && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-white/20 bg-[#FF4D00]">
           {step > 1 ? (
             <button
               onClick={prevStep}
               className="flex-1 py-5 font-bold uppercase tracking-widest text-sm border-r border-white/20 hover:bg-white/10 transition-colors"
-              style={{ fontFamily: "'Oi', serif" }}
+              style={{ fontFamily: LG_FONT }}
             >
               BACK
             </button>
@@ -628,15 +937,15 @@ export default function Index() {
             <div className="flex-1" />
           )}
           <button
-            onClick={step === 3 ? () => createMutation.mutate(formData) : nextStep}
+            onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
             disabled={createMutation.isPending}
             className={cn(
               "flex-1 py-5 font-bold uppercase tracking-widest text-sm transition-colors",
               createMutation.isPending ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"
             )}
-            style={{ fontFamily: "'Oi', serif" }}
+            style={{ fontFamily: LG_FONT }}
           >
-            {createMutation.isPending ? "..." : step === 3 ? "CREATE!" : "NEXT"}
+            {createMutation.isPending ? "..." : step === 4 ? "CREATE!" : "NEXT"}
           </button>
         </div>
       )}
@@ -644,7 +953,7 @@ export default function Index() {
       {/* Decorative BG text */}
       <div
         className="fixed -bottom-16 -left-8 text-[18vw] leading-none opacity-[0.04] pointer-events-none select-none whitespace-nowrap"
-        style={{ fontFamily: "'Oi', serif" }}
+        style={{ fontFamily: LG_FONT }}
       >
         LET'S CELEBRATE
       </div>
