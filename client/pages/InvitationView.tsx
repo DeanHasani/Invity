@@ -1,0 +1,179 @@
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { Invitation } from "@shared/api";
+import Postcard from "@/components/Postcard";
+import { supabase } from "@/lib/supabase";
+import { getViewerToken } from "@/lib/identity";
+
+type ViewState = "loading" | "ok" | "not-found" | "expired" | "accepted";
+
+// ── Shared layout shell for the three error states ────────────────────────────
+function ErrorPage({
+  emoji,
+  headline,
+  sub,
+  cta = "Create Your Own",
+}: {
+  emoji: string;
+  headline: string;
+  sub: string;
+  cta?: string;
+}) {
+  return (
+    <div
+      className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-6"
+      style={{ background: "#110500" }}
+    >
+      <div className="text-7xl select-none">{emoji}</div>
+      <h1
+        className="text-5xl md:text-7xl uppercase leading-none"
+        style={{ fontFamily: "'Oi', serif", color: "#FF4D00" }}
+      >
+        {headline}
+      </h1>
+      <p
+        className="text-base max-w-xs"
+        style={{ fontFamily: "'Montserrat', sans-serif", color: "rgba(255,255,255,0.45)" }}
+      >
+        {sub}
+      </p>
+      <Link
+        to="/"
+        className="mt-2 px-10 py-4 text-xl uppercase tracking-wider transition-all"
+        style={{
+          fontFamily: "'Oi', serif",
+          border: "2px solid #FF4D00",
+          color: "#FF4D00",
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLElement).style.background = "#FF4D00";
+          (e.currentTarget as HTMLElement).style.color = "#fff";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLElement).style.background = "transparent";
+          (e.currentTarget as HTMLElement).style.color = "#FF4D00";
+        }}
+      >
+        {cta}
+      </Link>
+    </div>
+  );
+}
+
+// ── Main view ─────────────────────────────────────────────────────────────────
+export default function InvitationView() {
+  const { id } = useParams();
+  const [state, setState]           = useState<ViewState>("loading");
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [expiresAt, setExpiresAt]   = useState<number>(0);
+
+  useEffect(() => {
+    if (!id) { setState("not-found"); return; }
+
+    const viewerToken = getViewerToken();
+
+    supabase
+      .from("invitations")
+      .select("*")
+      .eq("id", id)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) { setState("not-found"); return; }
+
+        const expiry = new Date(data.expires_at as string).getTime();
+        if (Date.now() > expiry) { setState("expired"); return; }
+
+        if ((data.accepted_tokens as string[]).includes(viewerToken)) {
+          setState("accepted");
+          return;
+        }
+
+        setExpiresAt(expiry);
+        setInvitation({
+          id:       data.id,
+          title:    data.title,
+          message:  data.message,
+          designId: data.design_id,
+          effectId: data.effect_id,
+          date:     data.date     ?? undefined,
+          location: data.location ?? undefined,
+        });
+        setState("ok");
+      });
+  }, [id]);
+
+  const handleAccept = async () => {
+    if (!id) return;
+    const viewerToken = getViewerToken();
+    const { data: current } = await supabase
+      .from("invitations")
+      .select("accepted_tokens")
+      .eq("id", id)
+      .single();
+
+    const tokens = [...((current?.accepted_tokens as string[]) ?? []), viewerToken];
+    await supabase.from("invitations").update({ accepted_tokens: tokens }).eq("id", id);
+  };
+
+  // ── States ──────────────────────────────────────────────────────────────────
+
+  if (state === "loading") return (
+    <div
+      className="h-screen w-screen flex items-center justify-center text-4xl animate-pulse uppercase tracking-widest"
+      style={{ background: "#FF4D00", color: "#fff", fontFamily: "'Oi', serif" }}
+    >
+      Loading...
+    </div>
+  );
+
+  if (state === "not-found") return (
+    <div
+      className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-8"
+      style={{ background: "#FF4D00", color: "#fff" }}
+    >
+      <h1 className="text-5xl md:text-6xl uppercase" style={{ fontFamily: "'Oi', serif" }}>
+        404 — NOT FOUND
+      </h1>
+      <p className="text-lg opacity-70" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+        This invitation doesn't exist. Maybe the link was mistyped?
+      </p>
+      <Link
+        to="/"
+        className="bg-white text-[#FF4D00] text-2xl py-5 px-12 hover:bg-white/90 transition-colors uppercase tracking-wider"
+        style={{ fontFamily: "'Oi', serif" }}
+      >
+        Create Your Own
+      </Link>
+    </div>
+  );
+
+  if (state === "expired") return (
+    <ErrorPage
+      emoji="⌛"
+      headline="THIS ONE'S GONE"
+      sub="This invitation expired. Ask the host to send you a fresh link — the party's still on!"
+    />
+  );
+
+  if (state === "accepted") return (
+    <ErrorPage
+      emoji="🎉"
+      headline="YOU'RE ALREADY IN"
+      sub="You already accepted this invitation. See you there!"
+      cta="Make Your Own Invite"
+    />
+  );
+
+  const remainingHours = Math.max(0, (expiresAt - Date.now()) / 3_600_000);
+
+  return (
+    <div className="w-screen h-screen overflow-hidden">
+      <Postcard
+        invitation={invitation!}
+        isLiveView={true}
+        expiresInHours={remainingHours}
+        onAccept={handleAccept}
+      />
+    </div>
+  );
+}
