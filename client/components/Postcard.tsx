@@ -13,8 +13,8 @@ interface PostcardProps {
   isLiveView?: boolean;
   /** Hours until the link expires. Default: 24 */
   expiresInHours?: number;
-  /** Called when the viewer clicks "I'll Be There" */
-  onAccept?: () => void;
+  /** Called when the viewer submits their RSVP name */
+  onRsvp?: (name: string, status: "accepted" | "declined") => Promise<void>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1120,60 +1120,158 @@ export const DESIGN_BG: Record<string, string> = {
 // RSVP overlay
 // ─────────────────────────────────────────────────────────────────────────────
 
-function RsvpZone({ designId, onAccept }: { designId: string; onAccept?: () => void }) {
-  const [status, setStatus] = useState<"idle" | "accept" | "decline">("idle");
-  const zoneRef = useRef<HTMLDivElement>(null);
-  const confRef = useRef<HTMLDivElement>(null);
+const ACCEPT_MESSAGES = [
+  "PERFECT, WE'RE GONNA HAVE FUN!",
+  "GREAT TO SEE YOU COMING!",
+  "LET'S GET THIS PARTY STARTED!",
+];
+const DECLINE_MESSAGES = [
+  "YOU BROKE MY HEART...",
+  "NOT COOL FROM YOU!!",
+  "WE'LL MISS YOU OUT THERE...",
+];
 
-  const respond = (choice: "accept" | "decline") => {
-    gsap.to(zoneRef.current, {
-      opacity: 0, y: 14, duration: 0.35,
-      onComplete: () => {
-        setStatus(choice);
-        if (choice === "accept") onAccept?.();
-      },
-    });
-    gsap.fromTo(confRef.current, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, delay: 0.3 });
+const THEME_RSVP: Record<string, {
+  acceptBg: string; acceptText: string;
+  declineText: string; declineBorder: string;
+  inputText: string; inputBorder: string;
+  msgColor: string;
+}> = {
+  minimal:    { acceptBg: "#1a1a1a",  acceptText: "#f5f0e8",  declineText: "rgba(0,0,0,0.45)",      declineBorder: "rgba(0,0,0,0.25)",       inputText: "#1a1a1a",  inputBorder: "rgba(0,0,0,0.45)",       msgColor: "#1a1a1a"  },
+  playful:    { acceptBg: "#FFD60A",  acceptText: "#7B2CBF",  declineText: "rgba(255,214,10,0.55)", declineBorder: "rgba(255,214,10,0.35)",  inputText: "#fff",     inputBorder: "rgba(255,214,10,0.55)",  msgColor: "#FFD60A"  },
+  elegant:    { acceptBg: "#c9a84c",  acceptText: "#070707",  declineText: "rgba(201,168,76,0.55)", declineBorder: "rgba(201,168,76,0.35)",  inputText: "#e8d5a3",  inputBorder: "rgba(201,168,76,0.55)",  msgColor: "#c9a84c"  },
+  modernist:  { acceptBg: "#000000",  acceptText: "#00FF00",  declineText: "rgba(0,0,0,0.45)",      declineBorder: "rgba(0,0,0,0.25)",       inputText: "#000",     inputBorder: "rgba(0,0,0,0.45)",       msgColor: "#000000"  },
+  love:       { acceptBg: "#ff6b6b",  acceptText: "#ffffff",  declineText: "rgba(255,255,255,0.5)", declineBorder: "rgba(255,255,255,0.3)",  inputText: "#fff",     inputBorder: "rgba(255,150,150,0.55)", msgColor: "#ff9999"  },
+  natural:    { acceptBg: "#4a7a30",  acceptText: "#d4e8b0",  declineText: "rgba(212,232,176,0.5)", declineBorder: "rgba(212,232,176,0.3)",  inputText: "#d4e8b0",  inputBorder: "rgba(212,232,176,0.5)",  msgColor: "#d4e8b0"  },
+  scary:      { acceptBg: "#8b0000",  acceptText: "#ff4444",  declineText: "rgba(255,68,68,0.45)",  declineBorder: "rgba(255,68,68,0.25)",   inputText: "#ff4444",  inputBorder: "rgba(255,68,68,0.45)",   msgColor: "#ff4444"  },
+  futuristic: { acceptBg: "#22d3ee",  acceptText: "#020b18",  declineText: "rgba(34,211,238,0.5)",  declineBorder: "rgba(34,211,238,0.3)",   inputText: "#22d3ee",  inputBorder: "rgba(34,211,238,0.5)",   msgColor: "#22d3ee"  },
+  cyberpunk:  { acceptBg: "#ff00ff",  acceptText: "#08000f",  declineText: "rgba(255,0,255,0.5)",   declineBorder: "rgba(255,0,255,0.3)",    inputText: "#ff00ff",  inputBorder: "rgba(255,0,255,0.5)",    msgColor: "#ff00ff"  },
+  hacked:     { acceptBg: "#00ff55",  acceptText: "#010f04",  declineText: "rgba(0,255,85,0.5)",    declineBorder: "rgba(0,255,85,0.3)",     inputText: "#00ff55",  inputBorder: "rgba(0,255,85,0.5)",     msgColor: "#00ff55"  },
+};
+
+type RsvpPhase = "idle" | "name-entry" | "submitting" | "done";
+
+function RsvpZone({
+  designId,
+  onRsvp,
+}: {
+  designId: string;
+  onRsvp?: (name: string, status: "accepted" | "declined") => Promise<void>;
+}) {
+  const [phase, setPhase]       = useState<RsvpPhase>("idle");
+  const [choice, setChoice]     = useState<"accepted" | "declined" | null>(null);
+  const [randomMsg, setRandomMsg] = useState("");
+  const [name, setName]         = useState("");
+  const [finalName, setFinalName] = useState("");
+
+  const theme = THEME_RSVP[designId] ?? THEME_RSVP["elegant"];
+  const LG = "'Luckiest Guy', cursive";
+
+  const choose = (c: "accepted" | "declined") => {
+    const pool = c === "accepted" ? ACCEPT_MESSAGES : DECLINE_MESSAGES;
+    setRandomMsg(pool[Math.floor(Math.random() * pool.length)]);
+    setChoice(c);
+    setPhase("name-entry");
   };
 
-  const isLight = designId === "minimal" || designId === "modernist";
-  const acceptSty: React.CSSProperties = isLight
-    ? { background: "#1a1a1a", color: "#f5f0e8", border: "2px solid #1a1a1a" }
-    : { background: "rgba(255,255,255,0.88)", color: "#111", border: "2px solid rgba(255,255,255,0.88)" };
-  const declineSty: React.CSSProperties = isLight
-    ? { background: "transparent", color: "rgba(0,0,0,0.4)", border: "2px solid rgba(0,0,0,0.2)" }
-    : { background: "transparent", color: "rgba(255,255,255,0.45)", border: "2px solid rgba(255,255,255,0.25)" };
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || !choice) return;
+    setFinalName(trimmed);
+    setPhase("submitting");
+    await onRsvp?.(trimmed, choice);
+    setPhase("done");
+  };
 
-  return (
-    <>
-      {status === "idle" && (
-        <div ref={zoneRef} className="flex gap-3 flex-wrap justify-center">
-          <button
-            onClick={() => respond("accept")}
-            style={acceptSty}
-            className="px-8 py-3 text-base md:text-lg uppercase tracking-wider transition-transform hover:scale-105 cursor-pointer"
-            // Fix: font-[Oi,serif] is not valid Tailwind — use inline style
-            // eslint-disable-next-line react/no-unknown-property
-          >
-            <span style={{ fontFamily: "'Luckiest Guy', cursive" }}>✓ I'll Be There</span>
-          </button>
-          <button
-            onClick={() => respond("decline")}
-            style={declineSty}
-            className="px-8 py-3 text-base md:text-lg uppercase tracking-wider cursor-pointer hover:opacity-75 transition-opacity"
-          >
-            <span style={{ fontFamily: "'Luckiest Guy', cursive" }}>✗ Can't Make It</span>
-          </button>
-        </div>
-      )}
+  // ── Done: full-screen confirmation overlay ────────────────────────────────
+  if (phase === "done") {
+    return (
       <div
-        ref={confRef}
-        className="text-xl md:text-3xl uppercase tracking-widest text-center"
-        style={{ opacity: status === "idle" ? 0 : 1, fontFamily: "'Luckiest Guy', cursive" }}
+        className="absolute inset-0 z-50 flex flex-col items-center justify-center text-center p-8 gap-5"
+        style={{ background: "rgba(0,0,0,0.84)", backdropFilter: "blur(10px)", animation: "rsvpFadeIn 0.45s ease forwards" }}
       >
-        {status === "accept" ? "🎉 See You There!" : status === "decline" ? "We'll Miss You :(" : ""}
+        <p
+          className="text-4xl md:text-6xl uppercase leading-tight max-w-sm"
+          style={{ fontFamily: LG, color: "#FF4D00" }}
+        >
+          {randomMsg}
+        </p>
+        <p
+          className="text-xl md:text-2xl uppercase"
+          style={{ fontFamily: LG, color: "rgba(255,255,255,0.55)" }}
+        >
+          — {finalName}
+        </p>
+        <a
+          href="/"
+          className="mt-8 text-[11px] uppercase tracking-[0.22em] transition-opacity hover:opacity-60"
+          style={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          Create Your Own
+        </a>
       </div>
-    </>
+    );
+  }
+
+  // ── Name-entry / submitting ───────────────────────────────────────────────
+  if (phase === "name-entry" || phase === "submitting") {
+    return (
+      <div
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 w-full max-w-xs px-6 text-center"
+        style={{ animation: "rsvpFadeIn 0.35s ease forwards" }}
+      >
+        <p
+          className="text-lg md:text-xl uppercase leading-tight"
+          style={{ fontFamily: LG, color: theme.msgColor }}
+        >
+          {randomMsg}
+        </p>
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && submit()}
+          placeholder="Your name..."
+          autoFocus
+          disabled={phase === "submitting"}
+          className="w-full text-center text-lg bg-transparent border-b-2 py-2 px-3 focus:outline-none placeholder:opacity-30"
+          style={{
+            borderColor: theme.inputBorder,
+            color: theme.inputText,
+            fontFamily: "'Montserrat', sans-serif",
+          }}
+        />
+        <button
+          onClick={submit}
+          disabled={phase === "submitting" || !name.trim()}
+          style={{ background: theme.acceptBg, color: theme.acceptText, fontFamily: LG }}
+          className="w-full py-3 text-lg uppercase tracking-wider transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {phase === "submitting" ? "SENDING..." : choice === "accepted" ? "I'M IN!" : "CONFIRM"}
+        </button>
+      </div>
+    );
+  }
+
+  // ── Idle: accept / decline buttons ───────────────────────────────────────
+  return (
+    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 w-full px-6">
+      <div className="flex gap-3 flex-wrap justify-center">
+        <button
+          onClick={() => choose("accepted")}
+          style={{ background: theme.acceptBg, color: theme.acceptText, border: `2px solid ${theme.acceptBg}`, fontFamily: LG }}
+          className="px-8 py-3 text-base md:text-lg uppercase tracking-wider transition-transform hover:scale-105 cursor-pointer"
+        >
+          ✓ I'll Be There
+        </button>
+        <button
+          onClick={() => choose("declined")}
+          style={{ background: "transparent", color: theme.declineText, border: `2px solid ${theme.declineBorder}`, fontFamily: LG }}
+          className="px-8 py-3 text-base md:text-lg uppercase tracking-wider cursor-pointer hover:opacity-75 transition-opacity"
+        >
+          ✗ Can't Make It
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1187,6 +1285,9 @@ const FONT_FAMILY: Record<string, string> = {
   militant: "'Black Ops One', sans-serif",
   velvet:   "'Lobster', cursive",
   sleek:    "'Basic', sans-serif",
+  bloom:    "'Indie Flower', cursive",
+  slash:    "'Rubik Glitch', sans-serif",
+  fierce:   "'Spicy Rice', cursive",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1197,7 +1298,7 @@ export default function Postcard({
   invitation,
   isLiveView = false,
   expiresInHours = 24,
-  onAccept,
+  onRsvp,
 }: PostcardProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const gsapCtxRef = useRef<gsap.Context | null>(null);
@@ -1506,6 +1607,10 @@ export default function Postcard({
           0%,100% { opacity:.6; filter:hue-rotate(0deg);  }
           50%     { opacity:1;  filter:hue-rotate(40deg); }
         }
+        @keyframes rsvpFadeIn {
+          from { opacity:0; transform:translateY(12px); }
+          to   { opacity:1; transform:translateY(0);    }
+        }
         .word-span, .title-word, .msg-word { display:inline-block; }
       `}</style>
 
@@ -1637,9 +1742,7 @@ export default function Postcard({
 
         {/* RSVP — live view only */}
         {isLiveView && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 w-full px-6">
-            <RsvpZone designId={invitation.designId} onAccept={onAccept} />
-          </div>
+          <RsvpZone designId={invitation.designId} onRsvp={onRsvp} />
         )}
 
         {/* Watermark */}

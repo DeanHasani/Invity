@@ -5,9 +5,9 @@ import Postcard from "@/components/Postcard";
 import { supabase } from "@/lib/supabase";
 import { getViewerToken } from "@/lib/identity";
 
-type ViewState = "loading" | "ok" | "not-found" | "expired" | "accepted";
+type ViewState = "loading" | "ok" | "not-found" | "expired" | "responded";
 
-// ── Shared layout shell for the three error states ────────────────────────────
+// ── Shared layout shell for error / status pages ──────────────────────────────
 function ErrorPage({
   emoji,
   headline,
@@ -70,6 +70,12 @@ export default function InvitationView() {
   useEffect(() => {
     if (!id) { setState("not-found"); return; }
 
+    // Check localStorage first — no round-trip needed if already responded
+    if (localStorage.getItem(`invity_responded_${id}`)) {
+      setState("responded");
+      return;
+    }
+
     const viewerToken = getViewerToken();
 
     supabase
@@ -83,38 +89,45 @@ export default function InvitationView() {
         const expiry = new Date(data.expires_at as string).getTime();
         if (Date.now() > expiry) { setState("expired"); return; }
 
+        // Legacy check: accepted_tokens (pre-RSVP-flow invitations)
         if ((data.accepted_tokens as string[]).includes(viewerToken)) {
-          setState("accepted");
+          setState("responded");
           return;
         }
 
         setExpiresAt(expiry);
         setInvitation({
-          id:       data.id,
-          title:    data.title,
-          message:  data.message,
+          id:        data.id,
+          title:     data.title,
+          message:   data.message,
           designId:  data.design_id,
           effectId:  data.effect_id,
           fontId:    data.font_id    ?? undefined,
           fontColor: data.font_color ?? undefined,
-          date:      data.date     ?? undefined,
-          location:  data.location ?? undefined,
+          date:      data.date       ?? undefined,
+          location:  data.location   ?? undefined,
         });
         setState("ok");
       });
   }, [id]);
 
-  const handleAccept = async () => {
+  const handleRsvp = async (name: string, status: "accepted" | "declined") => {
     if (!id) return;
-    const viewerToken = getViewerToken();
-    const { data: current } = await supabase
-      .from("invitations")
-      .select("accepted_tokens")
-      .eq("id", id)
-      .single();
 
-    const tokens = [...((current?.accepted_tokens as string[]) ?? []), viewerToken];
-    await supabase.from("invitations").update({ accepted_tokens: tokens }).eq("id", id);
+    // Insert into rsvps table (silently fails if table not yet created)
+    try {
+      await supabase.from("rsvps").insert({ invitation_id: id, name, status });
+    } catch (_) { /* non-blocking */ }
+
+    // Trigger email notification via edge function (silently fails if not deployed)
+    try {
+      await supabase.functions.invoke("notify-rsvp", {
+        body: { invitation_id: id, name, status },
+      });
+    } catch (_) { /* non-blocking */ }
+
+    // Persist response so re-visits show the "already responded" page
+    localStorage.setItem(`invity_responded_${id}`, status);
   };
 
   // ── States ──────────────────────────────────────────────────────────────────
@@ -157,11 +170,11 @@ export default function InvitationView() {
     />
   );
 
-  if (state === "accepted") return (
+  if (state === "responded") return (
     <ErrorPage
-      emoji="🎉"
-      headline="YOU'RE ALREADY IN"
-      sub="You already accepted this invitation. See you there!"
+      emoji="✅"
+      headline="ALREADY REPLIED"
+      sub="You've already responded to this invitation. See you (or not)!"
       cta="Make Your Own Invite"
     />
   );
@@ -174,7 +187,7 @@ export default function InvitationView() {
         invitation={invitation!}
         isLiveView={true}
         expiresInHours={remainingHours}
-        onAccept={handleAccept}
+        onRsvp={handleRsvp}
       />
     </div>
   );

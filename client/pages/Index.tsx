@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { CreateInvitationRequest, Invitation } from "@shared/api";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
-import { supabase } from "@/lib/supabase";
+import { supabase, signInWithGoogle, signOut } from "@/lib/supabase";
 import { getCreatorId } from "@/lib/identity";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
@@ -68,6 +68,29 @@ const STEP_PHRASES: Record<number, string[]> = {
   4: ["PICK YOUR VIBE", "SET THE EFFECT", "CHOOSE THE MOOD", "MAKE IT YOURS"],
   5: ["YOU DID IT!", "PARTY TIME!", "READY TO SEND", "BOOM!"],
 };
+
+const BG_PHRASES = [
+  "CREATE YOUR INVITATION",
+  "INVITE YOUR COWORKERS",
+  "INVITE YOUR GANG",
+  "HAVE THE FUN OF YOUR LIFE",
+  "MAKE IT A NIGHT TO REMEMBER",
+  "YOUR PARTY YOUR RULES",
+  "GOOD TIMES INCOMING",
+  "BRING THE CROWD TOGETHER",
+  "SEND THE INVITE",
+  "DON'T CELEBRATE ALONE",
+  "MAKE MEMORIES HAPPEN",
+  "THE MORE THE MERRIER",
+  "GATHER YOUR PEOPLE",
+  "EVERY GREAT PARTY STARTS HERE",
+  "START THE PARTY",
+  "MAKE SOME NOISE",
+  "IT'S PARTY TIME",
+  "SPREAD THE WORD",
+  "LET THEM KNOW",
+  "THE GANG'S ALL HERE",
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DatePickerInput — custom calendar styled to the Invity orange palette
@@ -373,13 +396,385 @@ function TitleEffectPreview({
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Privacy Policy modal
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PrivacyPolicyModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+      style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-lg max-h-[80vh] overflow-y-auto"
+        style={{ background: "#110500", border: "2px solid rgba(255,77,0,0.35)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 flex items-center justify-between px-6 py-4" style={{ background: "#110500", borderBottom: "1px solid rgba(255,77,0,0.2)" }}>
+          <h2 className="text-xl uppercase tracking-wider" style={{ fontFamily: LG_FONT, color: "#FF4D00" }}>
+            Privacy Policy
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors text-2xl leading-none"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-5 text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Montserrat', sans-serif" }}>
+          <p className="text-[11px] uppercase tracking-widest" style={{ color: "rgba(255,77,0,0.6)" }}>
+            Last updated: May 2026
+          </p>
+
+          <p>
+            Invity is a personal invitation creator. We take your privacy seriously and keep data collection to the minimum needed to run the service.
+          </p>
+
+          <Section title="What we collect">
+            <li>Your <strong>Google account email address</strong> when you sign in — used only to send you RSVP notifications.</li>
+            <li>The <strong>content of invitations you create</strong> (title, message, date, location, design choices) — stored to generate your shareable link.</li>
+            <li>The <strong>name and response</strong> (accept/decline) submitted by your guests when they open your invitation link.</li>
+          </Section>
+
+          <Section title="How we use it">
+            <li>Your email is used <em>only</em> to notify you when a guest responds to your invitation.</li>
+            <li>We do not sell, share, or use your data for advertising or analytics of any kind.</li>
+            <li>Guest names and responses are visible only to you, the invitation creator.</li>
+          </Section>
+
+          <Section title="Data retention">
+            <li>Invitation links expire automatically after 8 hours.</li>
+            <li>You can permanently delete all your invitations and account data at any time via <strong>Account → Delete Everything</strong>.</li>
+            <li>If you choose to sign out without deleting, your data remains stored until you return or delete it.</li>
+          </Section>
+
+          <Section title="Third-party services">
+            <li><strong>Google OAuth</strong> — for sign-in. Google's own privacy policy applies to the authentication step.</li>
+            <li><strong>Supabase</strong> — database and authentication infrastructure. Data is stored on Supabase-managed servers.</li>
+            <li><strong>Resend</strong> — used to deliver RSVP notification emails to your inbox.</li>
+          </Section>
+
+          <Section title="Your rights">
+            <li>You can sign out at any time without losing your data.</li>
+            <li>You can delete everything — all invitations and associated data — instantly via the Account menu.</li>
+            <li>You have the right to request data deletion by contacting us directly.</li>
+          </Section>
+
+          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Questions? Reach out at <span style={{ color: "#FF4D00" }}>hasanidean97@gmail.com</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "#FF4D00" }}>{title}</p>
+      <ul className="space-y-1 pl-3 list-none">
+        {children}
+      </ul>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Account menu
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AccountMenu({ email, onPrivacy }: { email: string; onPrivacy: () => void }) {
+  const [open, setOpen]             = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting]     = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setConfirming(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  const handleDeleteEverything = async () => {
+    setDeleting(true);
+    await supabase.from("invitations").delete().eq("user_email", email);
+    await signOut();
+  };
+
+  return (
+    <div ref={ref} className="relative flex justify-end">
+      <button
+        onClick={() => { setOpen(o => !o); setConfirming(false); }}
+        className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity flex items-center gap-1.5"
+        style={{ fontFamily: LG_FONT }}
+      >
+        ACCOUNT
+        <span className="text-[8px] opacity-70">{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full right-0 mt-2 w-56 z-50 flex flex-col"
+          style={{ background: "#1a0800", border: "2px solid rgba(255,77,0,0.45)" }}
+        >
+          {/* Email */}
+          <div
+            className="px-4 py-3 text-[10px] uppercase tracking-widest truncate"
+            style={{ color: "rgba(255,255,255,0.3)", borderBottom: "1px solid rgba(255,77,0,0.2)" }}
+          >
+            {email}
+          </div>
+
+          {!confirming ? (
+            <>
+              <button
+                onClick={() => { signOut(); setOpen(false); }}
+                className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
+                style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.92)" }}
+              >
+                Sign Out
+              </button>
+              <button
+                onClick={() => { onPrivacy(); setOpen(false); }}
+                className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
+                style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
+              >
+                Privacy Policy
+              </button>
+              <button
+                onClick={() => setConfirming(true)}
+                className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
+                style={{ fontFamily: LG_FONT, color: "rgba(255,80,80,0.8)" }}
+              >
+                Delete Everything
+              </button>
+            </>
+          ) : (
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-[10px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.5)" }}>
+                This deletes all your invitations and signs you out. Are you sure?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeleteEverything}
+                  disabled={deleting}
+                  className="flex-1 py-2 text-[11px] uppercase tracking-wider transition-colors disabled:opacity-40"
+                  style={{ fontFamily: LG_FONT, background: "#cc2200", color: "#fff" }}
+                >
+                  {deleting ? "..." : "YES, DELETE"}
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  className="flex-1 py-2 text-[11px] uppercase tracking-wider transition-colors hover:bg-white/10"
+                  style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.2)" }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Google sign-in modal (dialog — stays on the creation page)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function GoogleSignInModal({ onClose }: { onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    setLoading(true);
+    try { await signInWithGoogle(); }
+    catch { setLoading(false); }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm flex flex-col items-center text-center gap-6 p-8 relative"
+        style={{ background: "#1a0800", border: "2px solid rgba(255,77,0,0.45)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-4 text-white/30 hover:text-white transition-colors text-2xl leading-none"
+        >
+          ×
+        </button>
+
+        <div className="space-y-1">
+          <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "#FF4D00" }}>
+            Sign In to Continue
+          </p>
+          <p className="text-xs opacity-50">
+            Sign in with Google to create your invitation and receive RSVP notifications.
+          </p>
+        </div>
+
+        <button
+          onClick={handleSignIn}
+          disabled={loading}
+          className="flex items-center gap-3 bg-white text-[#1a1a1a] w-full justify-center px-6 py-4 text-sm font-bold uppercase tracking-wider hover:bg-white/90 transition-colors disabled:opacity-60"
+          style={{ fontFamily: LG_FONT }}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            <path fill="none" d="M0 0h48v48H0z"/>
+          </svg>
+          {loading ? "OPENING..." : "CONTINUE WITH GOOGLE"}
+        </button>
+
+        <p className="text-[10px] opacity-30">
+          We only use your email to send RSVP notifications.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated background phrases
+// ─────────────────────────────────────────────────────────────────────────────
+
+type FloatingPhrase = { id: number; text: string; x: number; y: number; scale: number; visible: boolean };
+let _phraseCounter = 0;
+
+function FloatingPhrases({ active }: { active: boolean }) {
+  const [phrases, setPhrases] = useState<FloatingPhrase[]>([]);
+
+  useEffect(() => {
+    if (!active) { setPhrases([]); return; }
+
+    const spawn = () => {
+      const id = _phraseCounter++;
+      // Keep phrases in the left/right margins so they never land over the form
+      const leftSide = Math.random() < 0.5;
+      const p: FloatingPhrase = {
+        id,
+        text: BG_PHRASES[Math.floor(Math.random() * BG_PHRASES.length)],
+        x: leftSide ? 2 + Math.random() * 14 : 82 + Math.random() * 14,
+        y: 8 + Math.random() * 78,
+        scale: 0.7 + Math.random() * 0.8,
+        visible: false,
+      };
+      setPhrases(prev => [...prev.slice(-6), p]);
+      requestAnimationFrame(() => requestAnimationFrame(() =>
+        setPhrases(prev => prev.map(q => q.id === id ? { ...q, visible: true } : q))
+      ));
+      setTimeout(() => {
+        setPhrases(prev => prev.map(q => q.id === id ? { ...q, visible: false } : q));
+        setTimeout(() => setPhrases(prev => prev.filter(q => q.id !== id)), 850);
+      }, 3000);
+    };
+
+    spawn();
+    const iv = setInterval(spawn, 2000);
+    return () => { clearInterval(iv); setPhrases([]); };
+  }, [active]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+      {phrases.map(p => (
+        <div
+          key={p.id}
+          className="absolute uppercase select-none"
+          style={{
+            fontFamily: LG_FONT,
+            color: "rgba(255,255,255,0.35)",
+            fontSize: `clamp(0.75rem, ${1.7 * p.scale}vw, ${1.3 * p.scale}rem)`,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            transform: `translate(-50%, -50%) scale(${p.visible ? 1 : 0.85})`,
+            opacity: p.visible ? 1 : 0,
+            transition: "opacity 0.85s ease, transform 0.85s ease",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {p.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main wizard
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Index() {
+  const [authState, setAuthState]     = useState<"loading" | "signed-in" | "signed-out">("loading");
+  const [userEmail, setUserEmail]     = useState<string | null>(null);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showSignIn, setShowSignIn]   = useState(false);
+
   const [step, setStep] = useState(1);
   const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [effectPreviewKey, setEffectPreviewKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // ── Auth state ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        setAuthState("signed-in");
+      } else {
+        setAuthState("signed-out");
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        setAuthState("signed-in");
+        setShowSignIn(false);
+      } else {
+        setAuthState("signed-out");
+      }
+    });
+
+    // Close modal when OAuth popup posts back after completing auth
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === "INVITY_AUTH_DONE") {
+        setShowSignIn(false);
+        if (e.data.email) {
+          setUserEmail(e.data.email);
+          setAuthState("signed-in");
+        }
+      }
+    };
+    window.addEventListener("message", onMessage);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("message", onMessage);
+    };
+  }, []);
 
   const [formData, setFormData] = useState<CreateInvitationRequest>({
     title:     "",
@@ -458,6 +853,7 @@ export default function Index() {
           date:       data.date     || null,
           location:   data.location || null,
           creator_id: creatorId,
+          user_email: userEmail,
           expires_at: expiresAt,
         })
         .select()
@@ -570,6 +966,9 @@ export default function Index() {
       }}
     >
 
+      {/* ── Floating background phrases ── */}
+      <FloatingPhrases active={authState === "signed-out"} />
+
       {/* ── Design canvas background (step 2 only) ── */}
       {ActiveCanvas && (
         <div
@@ -591,11 +990,24 @@ export default function Index() {
         >
           INVITY
         </h1>
-        <div className="text-right pointer-events-auto">
+        <div className="text-right pointer-events-auto space-y-2">
+          {/* Sign in / Account — above phrase + dots */}
+          {authState === "signed-in" ? (
+            <AccountMenu email={userEmail ?? ""} onPrivacy={() => setShowPrivacy(true)} />
+          ) : (
+            <button
+              onClick={() => setShowSignIn(true)}
+              className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity"
+              style={{ fontFamily: LG_FONT }}
+            >
+              Sign In
+            </button>
+          )}
+          {/* Phrase + step dots — unchanged */}
           <p className="font-bold uppercase text-[11px] md:text-sm tracking-widest opacity-90">
             {STEP_PHRASES[step]?.[phraseIndices[step]] ?? ""}
           </p>
-          <div className="flex gap-1 mt-1.5 justify-end">
+          <div className="flex gap-1 justify-end">
             {[1, 2, 3, 4, 5].map(i => (
               <div
                 key={i}
@@ -645,8 +1057,15 @@ export default function Index() {
       )}
 
       {/* ── Main content ── */}
-      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-24 relative" style={{ zIndex: 2 }}>
-        <div ref={containerRef} className="max-w-xl w-full">
+      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-24" style={{ zIndex: 2 }}>
+        <div ref={containerRef} className="max-w-xl w-full relative">
+          {/* Interceptor — covers only the form card so the hand cursor stays narrow */}
+          {authState !== "signed-in" && step < 5 && (
+            <div
+              className="absolute inset-0 z-10 cursor-pointer"
+              onClick={() => setShowSignIn(true)}
+            />
+          )}
 
           {/* ── STEP 1: Event details ── */}
           {step === 1 && (
@@ -957,6 +1376,22 @@ export default function Index() {
       >
         LET'S CELEBRATE
       </div>
+
+      {/* Copyright */}
+      <div
+        className="fixed bottom-3 right-4 z-20 text-[10px] uppercase tracking-widest pointer-events-none select-none"
+        style={{ color: "rgba(255,255,255,0.18)", fontFamily: "'Montserrat', sans-serif" }}
+      >
+        © {new Date().getFullYear()} Invity. All rights reserved.
+      </div>
+
+      {/* Privacy Policy modal */}
+      {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
+
+      {/* Google sign-in modal */}
+      {showSignIn && (
+        <GoogleSignInModal onClose={() => setShowSignIn(false)} />
+      )}
     </div>
   );
 }
