@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CANVAS_MAP, DESIGN_BG, DecryptedText } from "@/components/Postcard";
+import { InAppBrowserBanner } from "@/components/InAppBrowserBanner";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -981,6 +982,7 @@ export default function Index() {
       }}
     >
 
+      <InAppBrowserBanner />
       {/* ── Floating background phrases ── */}
       <FloatingPhrases active={authState === "signed-out"} />
 

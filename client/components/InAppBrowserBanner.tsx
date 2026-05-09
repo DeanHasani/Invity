@@ -1,0 +1,81 @@
+import { useState, useEffect } from "react";
+
+function detectInApp(): { inApp: boolean; appName: string } {
+  const ua = navigator.userAgent || "";
+  if (/LinkedIn/i.test(ua))                                          return { inApp: true, appName: "LinkedIn" };
+  if (/FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(ua))                      return { inApp: true, appName: "Facebook" };
+  if (/Instagram/i.test(ua))                                         return { inApp: true, appName: "Instagram" };
+  if (/Twitter/i.test(ua))                                           return { inApp: true, appName: "X (Twitter)" };
+  if (/musical_ly|TikTok/i.test(ua))                                 return { inApp: true, appName: "TikTok" };
+  if (/MicroMessenger/i.test(ua))                                    return { inApp: true, appName: "WeChat" };
+  if (/wv/.test(ua) && /Android/i.test(ua))                         return { inApp: true, appName: "an app" };
+  if (/iPhone|iPad/.test(ua) && !/Safari/.test(ua) && /AppleWebKit/.test(ua)) return { inApp: true, appName: "an app" };
+  return { inApp: false, appName: "" };
+}
+
+export function InAppBrowserBanner({ dismissible = false }: { dismissible?: boolean }) {
+  const [show, setShow]       = useState(false);
+  const [appName, setAppName] = useState("");
+  const [isAndroid, setIsAndroid] = useState(false);
+  const [copied, setCopied]   = useState(false);
+
+  useEffect(() => {
+    const { inApp, appName } = detectInApp();
+    if (inApp) {
+      setShow(true);
+      setAppName(appName);
+      setIsAndroid(/Android/i.test(navigator.userAgent));
+    }
+  }, []);
+
+  if (!show) return null;
+
+  const handleOpen = () => {
+    const url = window.location.href;
+    if (isAndroid) {
+      window.location.href =
+        `intent://${url.replace(/^https?:\/\//, "")}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+    } else {
+      navigator.clipboard?.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }).catch(() => {});
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl p-7 max-w-sm w-full text-center space-y-4 shadow-2xl">
+        <div className="text-5xl">🌐</div>
+        <h2 className="text-xl font-bold text-gray-900 leading-snug">
+          Open in your browser
+        </h2>
+        <p className="text-sm text-gray-500 leading-relaxed">
+          You're inside {appName}'s built-in browser. Google sign-in only works in Chrome or Safari — open the link there.
+        </p>
+
+        <button
+          onClick={handleOpen}
+          className="w-full bg-[#FF4D00] text-white font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-widest"
+        >
+          {isAndroid ? "Open in Chrome" : copied ? "✓ Link copied!" : "Copy link"}
+        </button>
+
+        {!isAndroid && (
+          <p className="text-xs text-gray-400">
+            Paste it in Safari or Chrome to continue.
+          </p>
+        )}
+
+        {dismissible && (
+          <button
+            onClick={() => setShow(false)}
+            className="text-xs text-gray-400 underline underline-offset-2"
+          >
+            Continue anyway
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -4,6 +4,7 @@ import { Invitation } from "@shared/api";
 import Postcard from "@/components/Postcard";
 import { supabase } from "@/lib/supabase";
 import { getViewerToken } from "@/lib/identity";
+import { InAppBrowserBanner } from "@/components/InAppBrowserBanner";
 
 type ViewState = "loading" | "ok" | "not-found" | "expired" | "responded";
 
@@ -183,6 +184,7 @@ export default function InvitationView() {
 
   return (
     <div className="w-screen h-screen overflow-hidden">
+      <InAppBrowserBanner dismissible />
       <Postcard
         invitation={invitation!}
         isLiveView={true}
