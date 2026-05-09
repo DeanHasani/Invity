@@ -998,8 +998,20 @@ export default function Index() {
       {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 p-4 md:p-8 flex justify-between items-start md:items-center z-40 pointer-events-none">
         <h1
-          className="text-2xl md:text-4xl tracking-tighter cursor-default leading-none uppercase opacity-90 pointer-events-auto"
-          style={{ fontFamily: LG_FONT }}
+          className="text-2xl md:text-4xl tracking-tighter leading-none uppercase opacity-90 pointer-events-auto hover:opacity-100 transition-opacity"
+          style={{ fontFamily: LG_FONT, cursor: step === 1 ? "default" : "pointer" }}
+          onClick={() => {
+            if (step === 1) return;
+            if (step === 5) { resetBuilder(); return; }
+            gsap.killTweensOf(containerRef.current);
+            gsap.to(containerRef.current, {
+              opacity: 0, x: 30, duration: 0.22, ease: "power2.in",
+              onComplete: () => {
+                setStep(1);
+                gsap.fromTo(containerRef.current, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
+              },
+            });
+          }}
         >
           INVITY
         </h1>
