@@ -832,12 +832,14 @@ export default function Index() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateInvitationRequest) => {
       const creatorId = getCreatorId();
-      const since = new Date(Date.now() - 24 * 3_600_000).toISOString();
+      const since24h = new Date(Date.now() - 24 * 3_600_000).toISOString();
       if (userEmail) {
+        // creation_log checks are permanent (no time window) — survives account deletion + re-signup
+        // invitations check is a 24h fallback in case creation_log was accidentally wiped
         const [{ count: logEmailCount }, { count: logDeviceCount }, { count: invCount }] = await Promise.all([
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since),
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId).gte("created_at", since),
-          supabase.from("invitations").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since),
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail),
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId),
+          supabase.from("invitations").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since24h),
         ]);
         if ((logEmailCount ?? 0) >= 1 || (logDeviceCount ?? 0) >= 1 || (invCount ?? 0) >= 1)
           throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
@@ -846,7 +848,7 @@ export default function Index() {
           .from("invitations")
           .select("id", { count: "exact", head: true })
           .eq("creator_id", creatorId)
-          .gte("created_at", since);
+          .gte("created_at", since24h);
         if ((count ?? 0) >= 1) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
       }
 
