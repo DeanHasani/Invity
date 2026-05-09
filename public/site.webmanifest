@@ -1,0 +1,16 @@
+{
+  "name": "INVITY",
+  "short_name": "INVITY",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FF4D00",
+  "theme_color": "#FF4D00",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
