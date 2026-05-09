@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import gsap from "gsap";
+import { Renderer, Program, Mesh, Color, Triangle } from "ogl";
 import { Invitation } from "@shared/api";
 import { cn } from "@/lib/utils";
 
@@ -25,13 +26,15 @@ const THEME_BG: Record<string, string> = {
   minimal:    "bg-[#f5f0e8] text-[#1a1a1a]",
   playful:    "bg-[#7B2CBF] text-white",
   elegant:    "bg-[#070707] text-[#e8d5a3]",
-  modernist:  "bg-[#f0f0e0] text-black",
+  modernist:  "bg-[#c8924a] text-[#1a0800]",
   love:       "bg-[#b52a2a] text-white",
   natural:    "bg-[#1a2e14] text-[#d4e8b0]",
   scary:      "bg-[#04040c] text-[#ff4444]",
   futuristic: "bg-[#020b18] text-[#22d3ee]",
   cyberpunk:  "bg-[#08000f] text-[#ff00ff]",
   hacked:     "bg-[#010f04] text-[#00ff55]",
+  birthday:   "bg-gradient-to-br from-[#38bdf8] to-[#f472b6] text-[#FFD700]",
+  space:      "bg-[#03040e] text-[#e8e4f8]",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -313,18 +316,151 @@ function ElegantCanvas() {
 }
 
 function ModernistCanvas() {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const svgs: SVGSVGElement[] = [];
+
+    const BUILDINGS: { left: string; top: string; w: number; h: number; vb: string; paths: string[]; delay: number }[] = [
+      {
+        left: "5%", top: "5%", w: 130, h: 280, vb: "0 0 130 280", delay: 0,
+        paths: [
+          "M15 280 L15 30 L115 30 L115 280",
+          "M15 30 L65 5 L115 30",
+          "M15 30 L15 45 L115 45",
+          "M25 60 L55 60 L55 85 L25 85 Z",
+          "M75 60 L105 60 L105 85 L75 85 Z",
+          "M25 98 L55 98 L55 123 L25 123 Z",
+          "M75 98 L105 98 L105 123 L75 123 Z",
+          "M25 136 L55 136 L55 161 L25 161 Z",
+          "M75 136 L105 136 L105 161 L75 161 Z",
+          "M25 174 L55 174 L55 199 L25 199 Z",
+          "M75 174 L105 174 L105 199 L75 199 Z",
+          "M25 212 L55 212 L55 237 L25 237 Z",
+          "M75 212 L105 212 L105 237 L75 237 Z",
+          "M45 250 L85 250 L85 280 L45 280 Z",
+        ],
+      },
+      {
+        left: "27%", top: "18%", w: 200, h: 240, vb: "0 0 200 240", delay: 3500,
+        paths: [
+          "M0 240 L0 70 L200 70 L200 240",
+          "M0 70 L100 20 L200 70",
+          "M15 90 L45 90 L45 130 L15 130 Z",
+          "M77.5 90 L107.5 90 L107.5 130 L77.5 130 Z",
+          "M155 90 L185 90 L185 130 L155 130 Z",
+          "M15 145 L45 145 L45 185 L15 185 Z",
+          "M77.5 145 L107.5 145 L107.5 185 L77.5 185 Z",
+          "M155 145 L185 145 L185 185 L155 185 Z",
+          "M75 190 L125 190 L125 240 L75 240 Z",
+          "M10 65 L16 65 L16 72 L10 72 Z",
+          "M30 65 L36 65 L36 72 L30 72 Z",
+          "M164 65 L170 65 L170 72 L164 72 Z",
+          "M184 65 L190 65 L190 72 L184 72 Z",
+        ],
+      },
+      {
+        left: "57%", top: "4%", w: 160, h: 310, vb: "0 0 160 310", delay: 7000,
+        paths: [
+          "M40 310 L40 80 L120 80 L120 310",
+          "M0 310 L0 170 L160 170 L160 310",
+          "M48 100 L112 100 L112 125 L48 125 Z",
+          "M48 135 L112 135 L112 160 L48 160 Z",
+          "M8 188 L38 188 L38 213 L8 213 Z",
+          "M122 188 L152 188 L152 213 L122 213 Z",
+          "M8 225 L38 225 L38 250 L8 250 Z",
+          "M122 225 L152 225 L152 250 L122 250 Z",
+          "M8 262 L38 262 L38 287 L8 287 Z",
+          "M122 262 L152 262 L152 287 L122 287 Z",
+          "M55 185 L105 185 L105 215 L55 215 Z",
+          "M55 225 L105 225 L105 255 L55 255 Z",
+          "M60 270 L100 270 L100 310 L60 310 Z",
+        ],
+      },
+      {
+        left: "80%", top: "10%", w: 120, h: 270, vb: "0 0 120 270", delay: 10500,
+        paths: [
+          "M15 270 L15 25 L105 25 L105 270",
+          "M5 25 L60 0 L115 25",
+          "M15 25 L15 35 L105 35",
+          "M20 40 L40 40", "M80 40 L100 40",
+          "M20 46 L40 46", "M80 46 L100 46",
+          "M22 55 L58 55 L58 80 L22 80 Z",
+          "M62 55 L98 55 L98 80 L62 80 Z",
+          "M22 90 L58 90 L58 115 L22 115 Z",
+          "M62 90 L98 90 L98 115 L62 115 Z",
+          "M22 125 L58 125 L58 150 L22 150 Z",
+          "M62 125 L98 125 L98 150 L62 150 Z",
+          "M22 160 L58 160 L58 185 L22 185 Z",
+          "M62 160 L98 160 L98 185 L62 185 Z",
+          "M22 195 L58 195 L58 220 L22 220 Z",
+          "M62 195 L98 195 L98 220 L62 220 Z",
+          "M38 230 L82 230 L82 270 L38 270 Z",
+        ],
+      },
+    ];
+
+    BUILDINGS.forEach(bld => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", bld.vb);
+      svg.setAttribute("width", String(bld.w));
+      svg.setAttribute("height", String(bld.h));
+      svg.style.cssText = `position:absolute;left:${bld.left};top:${bld.top};pointer-events:none;overflow:visible;opacity:0;`;
+
+      const pathEls: SVGPathElement[] = [];
+      bld.paths.forEach(d => {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        p.setAttribute("d", d);
+        p.setAttribute("fill", "none");
+        p.setAttribute("stroke", "#1a0800");
+        p.setAttribute("stroke-width", "1.5");
+        p.setAttribute("stroke-linecap", "square");
+        p.setAttribute("stroke-linejoin", "miter");
+        svg.appendChild(p);
+        pathEls.push(p);
+      });
+
+      el.appendChild(svg);
+      svgs.push(svg);
+
+      requestAnimationFrame(() => {
+        const lengths = pathEls.map(p => p.getTotalLength());
+        pathEls.forEach((p, i) => {
+          p.style.strokeDasharray = String(lengths[i]);
+          p.style.strokeDashoffset = String(lengths[i]);
+        });
+
+        const run = () => {
+          gsap.set(svg, { opacity: 0.3 });
+          let acc = 0;
+          pathEls.forEach((p, i) => {
+            const dur = Math.max(0.3, lengths[i] / 150);
+            gsap.to(p, { strokeDashoffset: 0, duration: dur, delay: acc, ease: "power1.inOut" });
+            acc += dur * 0.65;
+          });
+          gsap.to(svg, {
+            opacity: 0, duration: 2.5, delay: acc + 5,
+            onComplete: () => {
+              pathEls.forEach((p, i) => gsap.set(p, { strokeDashoffset: lengths[i] }));
+              setTimeout(run, 2000 + Math.random() * 3000);
+            },
+          });
+        };
+
+        setTimeout(run, bld.delay);
+      });
+    });
+
+    return () => svgs.forEach(s => s.remove());
+  }, []);
+
   return (
     <>
-      {Array.from({ length: 9 }, (_, i) => (
-        <div key={`mh${i}`} className="absolute left-0 right-0 pointer-events-none"
-          style={{ height: "1px", background: "rgba(0,0,0,0.065)", top: `${(i + 1) * 10}%` }} />
-      ))}
-      {Array.from({ length: 9 }, (_, i) => (
-        <div key={`mv${i}`} className="absolute top-0 bottom-0 pointer-events-none"
-          style={{ width: "1px", background: "rgba(0,0,0,0.065)", left: `${(i + 1) * 10}%` }} />
-      ))}
-      <div className="absolute top-0 left-0 w-[7px] h-full bg-black pointer-events-none" />
-      <div className="absolute top-0 left-0 h-[7px] w-full bg-black/12 pointer-events-none" />
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
+      <div className="absolute top-0 left-0 w-full pointer-events-none" style={{ height: "3px", background: "rgba(26,8,0,0.35)" }} />
+      <div className="absolute top-0 left-0 h-full pointer-events-none" style={{ width: "3px", background: "rgba(26,8,0,0.35)" }} />
     </>
   );
 }
@@ -416,6 +552,61 @@ function NaturalCanvas() {
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
       <div className="absolute bottom-0 left-[-10%] w-[120%] h-[35%] pointer-events-none"
         style={{ background: "linear-gradient(to top,rgba(6,16,4,0.7),transparent)", animation: "fogdrift 15s ease-in-out infinite" }} />
+    </>
+  );
+}
+
+function BirthdayCanvas() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+
+    const POOL = [
+      ...Array(8).fill({ src: "/birthday/balloons.png", minSize: 55, maxSize: 95 }),
+      ...Array(4).fill({ src: "/birthday/cake.png",     minSize: 65, maxSize: 100 }),
+      ...Array(7).fill({ src: "/birthday/candle.png",   minSize: 30, maxSize: 52 }),
+    ].sort(() => Math.random() - 0.5);
+
+    const items: HTMLImageElement[] = [];
+    POOL.forEach(cfg => {
+      const img = document.createElement("img");
+      const size = cfg.minSize + Math.random() * (cfg.maxSize - cfg.minSize);
+      img.src = cfg.src;
+      img.alt = "";
+      img.draggable = false;
+      img.style.cssText = [
+        `position:absolute`,
+        `width:${size}px`,
+        `height:auto`,
+        `left:${Math.random() * 90}%`,
+        `top:${Math.random() * 86}%`,
+        `opacity:${0.14 + Math.random() * 0.20}`,
+        `pointer-events:none`,
+        `user-select:none`,
+      ].join(";");
+      el.appendChild(img);
+      items.push(img);
+
+      const floatDur  = 4 + Math.random() * 4;
+      const driftDur  = 3.5 + Math.random() * 3.5;
+      const spinDur   = 4 + Math.random() * 4;
+      const floatAmt  = 18 + Math.random() * 28;
+      const driftAmt  = 12 + Math.random() * 22;
+      const spinAmt   = 6 + Math.random() * 10;
+
+      gsap.to(img, { y: floatAmt,  duration: floatDur, repeat: -1, yoyo: true, ease: "sine.inOut", delay: Math.random() * 5 });
+      gsap.to(img, { x: driftAmt,  duration: driftDur, repeat: -1, yoyo: true, ease: "sine.inOut", delay: Math.random() * 4 });
+      gsap.to(img, { rotation: spinAmt, duration: spinDur,  repeat: -1, yoyo: true, ease: "sine.inOut", delay: Math.random() * 3 });
+    });
+
+    return () => items.forEach(img => img.remove());
+  }, []);
+
+  return (
+    <>
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 42%, rgba(255,215,0,0.07) 0%, transparent 68%)" }} />
     </>
   );
 }
@@ -798,178 +989,39 @@ function FuturisticCanvas() {
   );
 }
 
-// ── CYBERPUNK: Balatro shader — ported from the original GLSL to WebGL ───────
-// Direct port of the Balatro source shader (MIT/CC0-compatible port)
-const BALATRO_VERT = `
-  attribute vec2 a_pos;
-  void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }
-`;
-const BALATRO_FRAG = `
-  precision highp float;
-  uniform vec2  u_res;
-  uniform float u_time;
-  uniform float u_spin_speed;
-  uniform float u_move_speed;
-  uniform float u_spin_amount;
-  uniform float u_contrast;
-  uniform float u_lighting;
-  uniform vec3  u_col1;
-  uniform vec3  u_col2;
-  uniform vec3  u_col3;
-
-  void main() {
-    float pixel_filter = 700.0;
-    float pixel_size = length(u_res) / pixel_filter;
-    vec2 uv = (floor(gl_FragCoord.xy * (1.0/pixel_size)) * pixel_size
-               - 0.5 * u_res) / length(u_res);
-    float uv_len = length(uv);
-
-    float speed  = u_spin_speed * 0.2 + 302.2;
-    float angle  = atan(uv.y, uv.x) + speed
-                   - 20.0 * (u_spin_amount * uv_len + (1.0 - u_spin_amount));
-    vec2 mid = (u_res / length(u_res)) * 0.5;
-    uv = vec2(uv_len * cos(angle) + mid.x,
-              uv_len * sin(angle) + mid.y) - mid;
-
-    uv *= 30.0;
-    float t = u_time * u_move_speed;
-    vec2 uv2 = vec2(uv.x + uv.y);
-
-    for (int i = 0; i < 5; i++) {
-      uv2 += sin(max(uv.x, uv.y)) + uv;
-      uv  += 0.5 * vec2(cos(5.1123314 + 0.353 * uv2.y + t * 0.131121),
-                        sin(uv2.x - 0.113 * t));
-      uv  -= cos(uv.x + uv.y) - sin(uv.x * 0.711 - uv.y);
-    }
-
-    float cm   = 0.25 * u_contrast + 0.5 * u_spin_amount + 1.2;
-    float pr   = min(2.0, max(0.0, length(uv) * 0.035 * cm));
-    float c1p  = max(0.0, 1.0 - cm * abs(1.0 - pr));
-    float c2p  = max(0.0, 1.0 - cm * abs(pr));
-    float c3p  = 1.0 - min(1.0, c1p + c2p);
-    float lgt  = (u_lighting - 0.2) * max(c1p * 5.0 - 4.0, 0.0)
-               +  u_lighting         * max(c2p * 5.0 - 4.0, 0.0);
-
-    vec3 col = (0.3 / u_contrast) * u_col1
-             + (1.0 - 0.3 / u_contrast)
-               * (u_col1 * c1p + u_col2 * c2p + c3p * u_col3) + lgt;
-    gl_FragColor = vec4(col, 1.0);
-  }
-`;
-
-function hex2rgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.replace("#",""), 16);
-  return [(n>>16)/255, ((n>>8)&0xff)/255, (n&0xff)/255];
-}
-
+// ── CYBERPUNK: neon rain ──────────────────────────────────────────────────────
 function CyberpunkCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const gl = canvas.getContext("webgl",
-      { alpha: false, antialias: false, powerPreference: "low-power" });
-    if (!gl) {
-      // WebGL unavailable — fallback handled by CSS background
-      return;
+    const el = ref.current;
+    if (!el) return;
+    const items: HTMLDivElement[] = [];
+
+    const PALETTE = ["#ff00ff","#00ffff","#ff2200","#ff00ff","#00ffff","#ff2200","#ff00ff","#ffffff"];
+
+    for (let i = 0; i < 48; i++) {
+      const streak = document.createElement("div");
+      const color = PALETTE[i % PALETTE.length];
+      const h = 30 + Math.random() * 110;
+      const w = Math.random() < 0.7 ? 1 : 2;
+      streak.style.cssText = `position:absolute;left:${Math.random()*100}%;top:-${h}px;width:${w}px;height:${h}px;background:linear-gradient(180deg,transparent 0%,${color} 45%,${color} 80%,transparent 100%);box-shadow:0 0 ${w*4}px ${color};pointer-events:none;opacity:${0.35+Math.random()*0.55};`;
+      el.appendChild(streak); items.push(streak);
+      gsap.to(streak, { y: (el.offsetHeight || 900) + h + 20, duration: 2.5 + Math.random() * 4, delay: Math.random() * 5, repeat: -1, ease: "none" });
     }
 
-    // ── Compile shaders ──
-    const compile = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src); gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        console.error(gl.getShaderInfoLog(s)); return null;
-      }
-      return s;
-    };
-    const vs = compile(gl.VERTEX_SHADER,   BALATRO_VERT);
-    const fs = compile(gl.FRAGMENT_SHADER, BALATRO_FRAG);
-    if (!vs || !fs) return;
-
-    const prog = gl.createProgram()!;
-    gl.attachShader(prog, vs); gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      console.error(gl.getProgramInfoLog(prog)); return;
-    }
-    gl.useProgram(prog);
-
-    // Full-screen quad
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER,
-      new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]), gl.STATIC_DRAW);
-    const aPos = gl.getAttribLocation(prog, "a_pos");
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    // Uniform locations
-    const uRes   = gl.getUniformLocation(prog, "u_res");
-    const uTime  = gl.getUniformLocation(prog, "u_time");
-    const uSpin  = gl.getUniformLocation(prog, "u_spin_speed");
-    const uMove  = gl.getUniformLocation(prog, "u_move_speed");
-    const uSAmt  = gl.getUniformLocation(prog, "u_spin_amount");
-    const uCont  = gl.getUniformLocation(prog, "u_contrast");
-    const uLight = gl.getUniformLocation(prog, "u_lighting");
-    const uC1    = gl.getUniformLocation(prog, "u_col1");
-    const uC2    = gl.getUniformLocation(prog, "u_col2");
-    const uC3    = gl.getUniformLocation(prog, "u_col3");
-
-    // Cyberpunk palette: magenta / cyan / near-black-purple
-    gl.uniform1f(uSpin,  1.8);
-    gl.uniform1f(uMove,  5.0);
-    gl.uniform1f(uSAmt,  0.3);
-    gl.uniform1f(uCont,  3.5);
-    gl.uniform1f(uLight, 0.4);
-    gl.uniform3fv(uC1, hex2rgb("#cc00cc"));
-    gl.uniform3fv(uC2, hex2rgb("#00cccc"));
-    gl.uniform3fv(uC3, hex2rgb("#08000f"));
-
-    let raf = 0;
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(uRes, canvas.width, canvas.height);
-    };
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-
-    const start = performance.now();
-    const tick = () => {
-      gl.uniform1f(uTime, (performance.now() - start) / 1000);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-      raf = requestAnimationFrame(tick);
-    };
-    tick();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      gl.deleteProgram(prog);
-      gl.deleteShader(vs); gl.deleteShader(fs);
-      gl.deleteBuffer(buf);
-    };
+    return () => items.forEach(d => d.remove());
   }, []);
 
   return (
     <>
-      {/* Balatro WebGL canvas — fills the container */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none"
-      />
-      {/* CRT scanlines overlay */}
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none"
         style={{ opacity: 0.025, backgroundImage: "repeating-linear-gradient(0deg,rgba(255,255,255,1) 0px,rgba(255,255,255,1) 1px,transparent 1px,transparent 3px)" }} />
-      {/* Neon edge lines */}
       <div className="absolute top-0 left-0 w-full pointer-events-none"
         style={{ height: "2px", background: "linear-gradient(to right,transparent,rgba(255,0,255,0.9),rgba(0,255,255,0.9),transparent)", boxShadow: "0 0 20px rgba(255,0,255,0.7)" }} />
       <div className="absolute bottom-0 left-0 w-full pointer-events-none"
         style={{ height: "2px", background: "linear-gradient(to right,transparent,rgba(0,255,255,0.9),rgba(255,0,255,0.9),transparent)", boxShadow: "0 0 20px rgba(0,255,255,0.7)" }} />
-      {/* Vignette */}
       <div className="absolute inset-0 pointer-events-none"
         style={{ boxShadow: "inset 0 0 80px rgba(0,0,0,0.6)" }} />
     </>
@@ -1079,6 +1131,127 @@ function HackedCanvas() {
   );
 }
 
+// ── SPACE: Galaxy shader (OGL) — reactbits.dev/backgrounds/galaxy ────────────
+
+const GALAXY_VERT = `
+attribute vec2 uv;
+attribute vec2 position;
+varying vec2 vUv;
+void main() { vUv = uv; gl_Position = vec4(position, 0, 1); }
+`;
+
+const GALAXY_FRAG = `
+precision highp float;
+uniform float uTime;
+uniform vec3 uResolution;
+uniform vec2 uFocal;
+uniform vec2 uRotation;
+uniform float uStarSpeed;
+uniform float uDensity;
+uniform float uHueShift;
+uniform float uSpeed;
+uniform vec2 uMouse;
+uniform float uGlowIntensity;
+uniform float uSaturation;
+uniform float uTwinkleIntensity;
+uniform float uRotationSpeed;
+uniform float uMouseActiveFactor;
+varying vec2 vUv;
+#define NUM_LAYER 4.0
+#define STAR_COLOR_CUTOFF 0.2
+#define MAT45 mat2(0.7071,-0.7071,0.7071,0.7071)
+#define PERIOD 3.0
+float Hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float tri(float x){return abs(fract(x)*2.0-1.0);}
+float tris(float x){float t=fract(x);return 1.0-smoothstep(0.0,1.0,abs(2.0*t-1.0));}
+float trisn(float x){float t=fract(x);return 2.0*(1.0-smoothstep(0.0,1.0,abs(2.0*t-1.0)))-1.0;}
+vec3 hsv2rgb(vec3 c){vec4 K=vec4(1.0,2.0/3.0,1.0/3.0,3.0);vec3 p=abs(fract(c.xxx+K.xyz)*6.0-K.www);return c.z*mix(K.xxx,clamp(p-K.xxx,0.0,1.0),c.y);}
+float Star(vec2 uv,float flare){float d=length(uv);float m=(0.05*uGlowIntensity)/d;float rays=smoothstep(0.0,1.0,1.0-abs(uv.x*uv.y*1000.0));m+=rays*flare*uGlowIntensity;uv*=MAT45;rays=smoothstep(0.0,1.0,1.0-abs(uv.x*uv.y*1000.0));m+=rays*0.3*flare*uGlowIntensity;m*=smoothstep(1.0,0.2,d);return m;}
+vec3 StarLayer(vec2 uv){vec3 col=vec3(0.0);vec2 gv=fract(uv)-0.5;vec2 id=floor(uv);for(int y=-1;y<=1;y++){for(int x=-1;x<=1;x++){vec2 offset=vec2(float(x),float(y));vec2 si=id+vec2(float(x),float(y));float seed=Hash21(si);float size=fract(seed*345.32);float glossLocal=tri(uStarSpeed/(PERIOD*seed+1.0));float flareSize=smoothstep(0.9,1.0,size)*glossLocal;float red=smoothstep(STAR_COLOR_CUTOFF,1.0,Hash21(si+1.0))+STAR_COLOR_CUTOFF;float blu=smoothstep(STAR_COLOR_CUTOFF,1.0,Hash21(si+3.0))+STAR_COLOR_CUTOFF;float grn=min(red,blu)*seed;vec3 base=vec3(red,grn,blu);float hue=atan(base.g-base.r,base.b-base.r)/(2.0*3.14159)+0.5;hue=fract(hue+uHueShift/360.0);float sat=length(base-vec3(dot(base,vec3(0.299,0.587,0.114))))*uSaturation;float val=max(max(base.r,base.g),base.b);base=hsv2rgb(vec3(hue,sat,val));vec2 pad=vec2(tris(seed*34.0+uTime*uSpeed/10.0),tris(seed*38.0+uTime*uSpeed/30.0))-0.5;float star=Star(gv-offset-pad,flareSize);float twinkle=trisn(uTime*uSpeed+seed*6.2831)*0.5+1.0;twinkle=mix(1.0,twinkle,uTwinkleIntensity);star*=twinkle;col+=star*size*base;}}return col;}
+void main(){
+  vec2 focalPx=uFocal*uResolution.xy;
+  vec2 uv=(vUv*uResolution.xy-focalPx)/uResolution.y;
+  float autoRotAngle=uTime*uRotationSpeed;
+  mat2 autoRot=mat2(cos(autoRotAngle),-sin(autoRotAngle),sin(autoRotAngle),cos(autoRotAngle));
+  uv=autoRot*uv;
+  uv=mat2(uRotation.x,-uRotation.y,uRotation.y,uRotation.x)*uv;
+  vec3 col=vec3(0.0);
+  for(float i=0.0;i<1.0;i+=1.0/NUM_LAYER){float depth=fract(i+uStarSpeed*uSpeed);float scale=mix(20.0*uDensity,0.5*uDensity,depth);float fade=depth*smoothstep(1.0,0.9,depth);col+=StarLayer(uv*scale+i*453.32)*fade;}
+  gl_FragColor=vec4(col,1.0);
+}
+`;
+
+function SpaceCanvas() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctn = containerRef.current;
+    if (!ctn) return;
+
+    const renderer = new Renderer({ alpha: false, antialias: false });
+    const gl = renderer.gl;
+    gl.clearColor(0, 0, 0, 1);
+
+    let program: InstanceType<typeof Program>;
+
+    const resize = () => {
+      renderer.setSize(ctn.offsetWidth, ctn.offsetHeight);
+      if (program) {
+        program.uniforms.uResolution.value = new Color(
+          gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height
+        );
+      }
+    };
+    window.addEventListener("resize", resize);
+
+    const geometry = new Triangle(gl);
+    program = new Program(gl, {
+      vertex: GALAXY_VERT,
+      fragment: GALAXY_FRAG,
+      uniforms: {
+        uTime:               { value: 0 },
+        uResolution:         { value: new Color(1, 1, 1) },
+        uFocal:              { value: new Float32Array([0.5, 0.5]) },
+        uRotation:           { value: new Float32Array([1.0, 0.0]) },
+        uStarSpeed:          { value: 0.5 },
+        uDensity:            { value: 1.3 },
+        uHueShift:           { value: 200 },
+        uSpeed:              { value: 0.8 },
+        uMouse:              { value: new Float32Array([0.5, 0.5]) },
+        uGlowIntensity:      { value: 0.45 },
+        uSaturation:         { value: 1.2 },
+        uTwinkleIntensity:   { value: 0.45 },
+        uRotationSpeed:      { value: 0.06 },
+        uMouseActiveFactor:  { value: 0.0 },
+      },
+    });
+
+    const mesh = new Mesh(gl, { geometry, program });
+    const canvas = gl.canvas as HTMLCanvasElement;
+    canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;pointer-events:none;";
+    ctn.appendChild(canvas);
+    resize();
+
+    let raf = 0;
+    const tick = (t: number) => {
+      raf = requestAnimationFrame(tick);
+      program.uniforms.uTime.value = t * 0.001;
+      program.uniforms.uStarSpeed.value = (t * 0.001 * 0.5) / 10.0;
+      renderer.render({ scene: mesh });
+    };
+    raf = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      if (ctn.contains(canvas)) ctn.removeChild(canvas);
+      (gl as WebGLRenderingContext).getExtension("WEBGL_lose_context")?.loseContext();
+    };
+  }, []);
+
+  return <div ref={containerRef} className="absolute inset-0 pointer-events-none" />;
+}
+
 // Maps a single effectId to the underlying animation + text-effect primitives
 const EFFECT_MAP: Record<string, { animationId: string; textEffectId: string }> = {
   static:    { animationId: "slide",    textEffectId: "none"    },
@@ -1101,19 +1274,23 @@ export const CANVAS_MAP: Record<string, React.FC> = {
   futuristic: FuturisticCanvas,
   cyberpunk:  CyberpunkCanvas,
   hacked:     HackedCanvas,
+  birthday:   BirthdayCanvas,
+  space:      SpaceCanvas,
 };
 
 export const DESIGN_BG: Record<string, string> = {
   minimal:    "#f5f0e8",
   playful:    "#7B2CBF",
   elegant:    "#070707",
-  modernist:  "#f0f0e0",
+  modernist:  "#c8924a",
   love:       "#b52a2a",
   natural:    "#1a2e14",
   scary:      "#04040c",
   futuristic: "#020b18",
   cyberpunk:  "#08000f",
   hacked:     "#010f04",
+  birthday:   "#5ab4e8",
+  space:      "#03040e",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1140,13 +1317,15 @@ const THEME_RSVP: Record<string, {
   minimal:    { acceptBg: "#1a1a1a",  acceptText: "#f5f0e8",  declineText: "rgba(0,0,0,0.45)",      declineBorder: "rgba(0,0,0,0.25)",       inputText: "#1a1a1a",  inputBorder: "rgba(0,0,0,0.45)",       msgColor: "#1a1a1a"  },
   playful:    { acceptBg: "#FFD60A",  acceptText: "#7B2CBF",  declineText: "rgba(255,214,10,0.55)", declineBorder: "rgba(255,214,10,0.35)",  inputText: "#fff",     inputBorder: "rgba(255,214,10,0.55)",  msgColor: "#FFD60A"  },
   elegant:    { acceptBg: "#c9a84c",  acceptText: "#070707",  declineText: "rgba(201,168,76,0.55)", declineBorder: "rgba(201,168,76,0.35)",  inputText: "#e8d5a3",  inputBorder: "rgba(201,168,76,0.55)",  msgColor: "#c9a84c"  },
-  modernist:  { acceptBg: "#000000",  acceptText: "#00FF00",  declineText: "rgba(0,0,0,0.45)",      declineBorder: "rgba(0,0,0,0.25)",       inputText: "#000",     inputBorder: "rgba(0,0,0,0.45)",       msgColor: "#000000"  },
+  modernist:  { acceptBg: "#1a0800",  acceptText: "#c8924a",  declineText: "rgba(26,8,0,0.5)",     declineBorder: "rgba(26,8,0,0.3)",      inputText: "#1a0800",  inputBorder: "rgba(26,8,0,0.45)",      msgColor: "#1a0800"  },
   love:       { acceptBg: "#ff6b6b",  acceptText: "#ffffff",  declineText: "rgba(255,255,255,0.5)", declineBorder: "rgba(255,255,255,0.3)",  inputText: "#fff",     inputBorder: "rgba(255,150,150,0.55)", msgColor: "#ff9999"  },
   natural:    { acceptBg: "#4a7a30",  acceptText: "#d4e8b0",  declineText: "rgba(212,232,176,0.5)", declineBorder: "rgba(212,232,176,0.3)",  inputText: "#d4e8b0",  inputBorder: "rgba(212,232,176,0.5)",  msgColor: "#d4e8b0"  },
   scary:      { acceptBg: "#8b0000",  acceptText: "#ff4444",  declineText: "rgba(255,68,68,0.45)",  declineBorder: "rgba(255,68,68,0.25)",   inputText: "#ff4444",  inputBorder: "rgba(255,68,68,0.45)",   msgColor: "#ff4444"  },
   futuristic: { acceptBg: "#22d3ee",  acceptText: "#020b18",  declineText: "rgba(34,211,238,0.5)",  declineBorder: "rgba(34,211,238,0.3)",   inputText: "#22d3ee",  inputBorder: "rgba(34,211,238,0.5)",   msgColor: "#22d3ee"  },
   cyberpunk:  { acceptBg: "#ff00ff",  acceptText: "#08000f",  declineText: "rgba(255,0,255,0.5)",   declineBorder: "rgba(255,0,255,0.3)",    inputText: "#ff00ff",  inputBorder: "rgba(255,0,255,0.5)",    msgColor: "#ff00ff"  },
   hacked:     { acceptBg: "#00ff55",  acceptText: "#010f04",  declineText: "rgba(0,255,85,0.5)",    declineBorder: "rgba(0,255,85,0.3)",     inputText: "#00ff55",  inputBorder: "rgba(0,255,85,0.5)",     msgColor: "#00ff55"  },
+  birthday:   { acceptBg: "#FFD700",  acceptText: "#140025",  declineText: "rgba(255,215,0,0.55)",  declineBorder: "rgba(255,215,0,0.35)",   inputText: "#FFD700",  inputBorder: "rgba(255,215,0,0.55)",   msgColor: "#FFD700"  },
+  space:      { acceptBg: "#e8e4f8",  acceptText: "#03040e",  declineText: "rgba(232,228,248,0.5)", declineBorder: "rgba(232,228,248,0.3)",  inputText: "#e8e4f8",  inputBorder: "rgba(232,228,248,0.5)",  msgColor: "#e8e4f8"  },
 };
 
 type RsvpPhase = "idle" | "name-entry" | "submitting" | "done";
@@ -1217,7 +1396,7 @@ function RsvpZone({
   if (phase === "name-entry" || phase === "submitting") {
     return (
       <div
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 w-full max-w-xs px-6 text-center"
+        className="absolute bottom-4 md:bottom-6 left-0 right-0 z-20 flex flex-col items-center gap-3 px-6 text-center max-w-xs mx-auto"
         style={{ animation: "rsvpFadeIn 0.35s ease forwards" }}
       >
         <p
@@ -1254,7 +1433,7 @@ function RsvpZone({
 
   // ── Idle: accept / decline buttons ───────────────────────────────────────
   return (
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3 w-full px-6">
+    <div className="absolute bottom-4 md:bottom-8 left-0 right-0 z-20 flex flex-col items-center gap-3 px-6">
       <div className="flex gap-3 flex-wrap justify-center">
         <button
           onClick={() => choose("accepted")}
@@ -1643,7 +1822,7 @@ export default function Postcard({
           ref={contentRef}
           className={cn(
             "relative z-10 flex flex-col items-center text-center px-6 md:px-20 max-w-[880px] w-full",
-            isLiveView && "pb-36"
+            isLiveView && "pb-28 md:pb-36"
           )}
         >
           <p

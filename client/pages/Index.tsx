@@ -29,6 +29,8 @@ const DESIGNS = [
   { id: "futuristic", label: "Futuristic", color: "bg-[#020b18] text-[#22d3ee] border-2 border-[#22d3ee]" },
   { id: "cyberpunk",  label: "Cyberpunk",  color: "bg-[#08000f] text-[#ff00ff] border-2 border-[#ff00ff] shadow-[0_0_16px_rgba(255,0,255,0.4)]" },
   { id: "hacked",     label: "Hacked",     color: "bg-[#010f04] text-[#00ff55] border-2 border-[#00ff55] shadow-[0_0_16px_rgba(0,255,80,0.4)]" },
+  { id: "birthday",   label: "Birthday",   color: "border-2", style: { background: "linear-gradient(135deg,#38bdf8,#f472b6)", color: "#FFD700", borderColor: "#f472b6" } },
+  { id: "space",      label: "Space",      color: "bg-[#0d1b3e] text-[#e8e4f8] border-2 border-[#e8e4f8]/40" },
 ];
 
 const EFFECTS = [
@@ -43,7 +45,7 @@ const EFFECTS = [
 
 const FONTS = [
   { id: "funky",    label: "Funky",    family: "'Fontdiner Swanky', cursive" },
-  { id: "stampede", label: "Stampede", family: "'Vast Shadow', serif" },
+  { id: "stampede", label: "Stamp", family: "'Vast Shadow', serif" },
   { id: "militant", label: "Militant", family: "'Black Ops One', sans-serif" },
   { id: "velvet",   label: "Velvet",   family: "'Lobster', cursive" },
   { id: "sleek",    label: "Sleek",    family: "'Basic', sans-serif" },
@@ -158,7 +160,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
 
       {open && (
         <div
-          className="absolute top-full left-0 mt-3 z-50 shadow-2xl w-72"
+          className="absolute bottom-full left-0 mb-3 z-50 shadow-2xl w-72"
           style={{ background: "#1a0a00", border: "2px solid rgba(255,77,0,0.5)", fontFamily: "'Montserrat', sans-serif" }}
         >
           <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,77,0,0.2)" }}>
@@ -831,12 +833,22 @@ export default function Index() {
     mutationFn: async (data: CreateInvitationRequest) => {
       const creatorId = getCreatorId();
       const since = new Date(Date.now() - 24 * 3_600_000).toISOString();
-      const { count } = await supabase
-        .from("invitations")
-        .select("id", { count: "exact", head: true })
-        .eq("creator_id", creatorId)
-        .gte("created_at", since);
-      if ((count ?? 0) >= 1) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
+      if (userEmail) {
+        const [{ count: logEmailCount }, { count: logDeviceCount }, { count: invCount }] = await Promise.all([
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since),
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId).gte("created_at", since),
+          supabase.from("invitations").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since),
+        ]);
+        if ((logEmailCount ?? 0) >= 1 || (logDeviceCount ?? 0) >= 1 || (invCount ?? 0) >= 1)
+          throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
+      } else {
+        const { count } = await supabase
+          .from("invitations")
+          .select("id", { count: "exact", head: true })
+          .eq("creator_id", creatorId)
+          .gte("created_at", since);
+        if ((count ?? 0) >= 1) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
+      }
 
       const id = nanoid(10);
       const expiresAt = new Date(Date.now() + 8 * 3_600_000).toISOString();
@@ -859,6 +871,7 @@ export default function Index() {
         .select()
         .single();
       if (error) throw error;
+      if (userEmail) await supabase.from("creation_log").insert({ user_email: userEmail, creator_id: creatorId });
       return {
         invitation: {
           id:        row.id,
@@ -1057,8 +1070,8 @@ export default function Index() {
       )}
 
       {/* ── Main content ── */}
-      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-24" style={{ zIndex: 2 }}>
-        <div ref={containerRef} className="max-w-xl w-full relative">
+      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-16" style={{ zIndex: 2 }}>
+        <div ref={containerRef} className="max-w-3xl w-full relative">
           {/* Interceptor — covers only the form card so the hand cursor stays narrow */}
           {authState !== "signed-in" && step < 5 && (
             <div
@@ -1124,21 +1137,22 @@ export default function Index() {
               <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
                 PICK A<br />DESIGN.
               </h2>
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
                 {DESIGNS.map(d => (
                   <button
                     key={d.id}
                     onClick={() => setFormData({ ...formData, designId: d.id as any })}
+                    style={d.style}
                     className={cn(
-                      "group relative p-5 md:p-7 transition-all duration-200 flex items-center justify-between",
+                      "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
                       d.color,
                       formData.designId === d.id
                         ? "scale-[1.02] ring-4 ring-white ring-offset-2 ring-offset-[#FF4D00]"
                         : "opacity-65 hover:opacity-95"
                     )}
                   >
-                    <span className="text-xl md:text-2xl uppercase" style={{ fontFamily: LG_FONT }}>{d.label}</span>
-                    {formData.designId === d.id && <Check className="w-6 h-6" />}
+                    <span className="text-base md:text-xl uppercase leading-tight" style={{ fontFamily: LG_FONT }}>{d.label}</span>
+                    {formData.designId === d.id && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
                   </button>
                 ))}
               </div>
@@ -1152,75 +1166,65 @@ export default function Index() {
                 PICK YOUR<br />TEXT STYLE.
               </h2>
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {FONTS.map(f => {
                   const isSel = formData.fontId === f.id;
                   return (
-                    <div key={f.id}>
-                      <button
-                        onClick={() => setFormData({ ...formData, fontId: f.id })}
-                        className={cn(
-                          "w-full p-5 md:p-6 transition-all duration-200 flex items-center justify-between border-2 text-left",
-                          isSel
-                            ? "bg-white text-[#FF4D00] border-white"
-                            : "border-white/30 opacity-65 hover:opacity-95"
-                        )}
-                      >
-                        <span className="text-2xl md:text-3xl uppercase" style={{ fontFamily: f.family }}>
-                          {f.label}
-                        </span>
-                        {isSel && <Check className="w-6 h-6 flex-shrink-0 ml-4" />}
-                      </button>
-
-                      {/* Inline accordion — expands under the selected font */}
-                      <div className={cn(
-                        "grid transition-all duration-300",
-                        isSel ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                      )}>
-                        <div className="overflow-hidden">
-                          <div className="border-x-2 border-b-2 border-white px-4 pt-4 pb-3 space-y-3 bg-white/5">
-                            {/* Title preview in this font */}
-                            <p
-                              className="uppercase text-center leading-none"
-                              style={{
-                                fontFamily: f.family,
-                                color: formData.fontColor,
-                                fontSize: "clamp(1.6rem, 6vw, 2.8rem)",
-                                letterSpacing: "-0.02em",
-                              }}
-                            >
-                              {formData.title || "PREVIEW"}
-                            </p>
-                            {/* Color swatches — smaller boxes with black border */}
-                            <div className="flex flex-wrap gap-2">
-                              {COLOR_SWATCHES.map(c => (
-                                <button
-                                  key={c}
-                                  type="button"
-                                  onClick={() => setFormData({ ...formData, fontColor: c })}
-                                  title={c}
-                                  style={{
-                                    background: c,
-                                    width: 26,
-                                    height: 26,
-                                    outline: "2px solid rgba(0,0,0,0.55)",
-                                    outlineOffset: "-1px",
-                                  }}
-                                  className={cn(
-                                    "transition-all duration-200",
-                                    formData.fontColor === c
-                                      ? "ring-2 ring-white ring-offset-2 ring-offset-[#FF4D00] scale-110"
-                                      : "opacity-80 hover:opacity-100 hover:scale-105"
-                                  )}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      key={f.id}
+                      onClick={() => setFormData({ ...formData, fontId: f.id })}
+                      className={cn(
+                        "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
+                        isSel
+                          ? "bg-white text-[#FF4D00] border-white"
+                          : "border-white/30 opacity-65 hover:opacity-95"
+                      )}
+                    >
+                      <span className="text-xl md:text-2xl uppercase" style={{ fontFamily: f.family }}>
+                        {f.label}
+                      </span>
+                      {isSel && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
+                    </button>
                   );
                 })}
+              </div>
+
+              {/* Color picker + preview — always visible below the grid */}
+              <div className="border-2 border-white/30 px-4 pt-4 pb-4 space-y-3 bg-white/5">
+                <p
+                  className="uppercase text-center leading-none"
+                  style={{
+                    fontFamily: selectedFont.family,
+                    color: formData.fontColor,
+                    fontSize: "clamp(1.6rem, 6vw, 2.6rem)",
+                    letterSpacing: "-0.02em",
+                  }}
+                >
+                  {formData.title || "PREVIEW"}
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {COLOR_SWATCHES.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, fontColor: c })}
+                      title={c}
+                      style={{
+                        background: c,
+                        width: 28,
+                        height: 28,
+                        outline: "2px solid rgba(0,0,0,0.55)",
+                        outlineOffset: "-1px",
+                      }}
+                      className={cn(
+                        "transition-all duration-200",
+                        formData.fontColor === c
+                          ? "ring-2 ring-white ring-offset-2 ring-offset-[#FF4D00] scale-110"
+                          : "opacity-80 hover:opacity-100 hover:scale-105"
+                      )}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -1232,52 +1236,49 @@ export default function Index() {
                 PICK YOUR<br />EFFECT.
               </h2>
 
-              <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {EFFECTS.map(e => {
                   const isSel = formData.effectId === e.id;
                   return (
-                    <div key={e.id}>
-                      <button
-                        onClick={() => {
-                          setFormData({ ...formData, effectId: e.id as any });
-                          setEffectPreviewKey(k => k + 1);
-                        }}
-                        className={cn(
-                          "w-full p-5 md:p-6 transition-all duration-200 flex items-center justify-between border-2 text-left",
-                          isSel
-                            ? "bg-white text-[#FF4D00] border-white"
-                            : "border-white/30 opacity-65 hover:opacity-95"
-                        )}
-                      >
-                        <div>
-                          <div className="text-xl md:text-2xl uppercase" style={{ fontFamily: LG_FONT }}>{e.label}</div>
-                          <div className="text-[11px] mt-0.5 opacity-60 font-medium">{e.desc}</div>
-                        </div>
-                        {isSel && <Check className="w-6 h-6 flex-shrink-0 ml-4" />}
-                      </button>
-
-                      {/* Inline accordion — animation preview expands under selected effect */}
-                      <div className={cn(
-                        "grid transition-all duration-300",
-                        isSel ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                      )}>
-                        <div className="overflow-hidden">
-                          {isSel && (
-                            <TitleEffectPreview
-                              key={`${e.id}-${effectPreviewKey}`}
-                              title={formData.title}
-                              fontFamily={selectedFont.family}
-                              fontColor={formData.fontColor ?? "#ffffff"}
-                              effectId={e.id}
-                              startDelay={320}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <button
+                      key={e.id}
+                      onClick={() => {
+                        setFormData({ ...formData, effectId: e.id as any });
+                        setEffectPreviewKey(k => k + 1);
+                      }}
+                      className={cn(
+                        "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
+                        isSel
+                          ? "bg-white text-[#FF4D00] border-white"
+                          : "border-white/30 opacity-65 hover:opacity-95"
+                      )}
+                    >
+                      <span className="text-2xl md:text-3xl uppercase" style={{ fontFamily: LG_FONT }}>{e.label}</span>
+                      {isSel && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
+                    </button>
                   );
                 })}
               </div>
+
+              {/* Preview panel — always visible below the grid */}
+              {(() => {
+                const selEffect = EFFECTS.find(e => e.id === formData.effectId) ?? EFFECTS[0];
+                return (
+                  <div className="border-2 border-white/30 px-4 pt-4 pb-4 space-y-3 bg-white/5">
+                    <TitleEffectPreview
+                      key={`${selEffect.id}-${effectPreviewKey}`}
+                      title={formData.title}
+                      fontFamily={selectedFont.family}
+                      fontColor={formData.fontColor ?? "#ffffff"}
+                      effectId={selEffect.id}
+                      startDelay={200}
+                    />
+                    <p className="text-[11px] uppercase tracking-wider text-center opacity-60 font-medium">
+                      {selEffect.desc}
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -1294,28 +1295,90 @@ export default function Index() {
                 {createdInvitation.location && <p>{createdInvitation.location}</p>}
               </div>
 
-              <div className="p-5 md:p-7 bg-white text-black space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-55">
-                  Your shareable link · expires in 8 h
-                </p>
-                <div
-                  onClick={copyLink}
-                  className="flex items-center gap-3 border-2 border-black p-4 cursor-pointer hover:bg-black/5 transition-colors group min-w-0"
-                >
-                  <LinkIcon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-bold truncate text-sm md:text-base flex-1 min-w-0">
-                    {window.location.origin}/{createdInvitation.id}
-                  </span>
-                  <Copy className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                </div>
-                <button
-                  onClick={copyLink}
-                  className="w-full bg-black text-white py-3 text-lg uppercase tracking-wider hover:bg-black/85 transition-colors"
-                  style={{ fontFamily: LG_FONT }}
-                >
-                  Copy Link
-                </button>
-              </div>
+              {(() => {
+                const shareUrl = `${window.location.origin}/${createdInvitation.id}`;
+                const waUrl = `https://wa.me/?text=${encodeURIComponent(`You're invited! 🎉 ${shareUrl}`)}`;
+                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+                const twUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent("You're invited! 🎉")}&url=${encodeURIComponent(shareUrl)}`;
+                const igCopy = () => {
+                  if (navigator.clipboard?.writeText) {
+                    navigator.clipboard.writeText(shareUrl).catch(() => fallbackCopy(shareUrl));
+                  } else { fallbackCopy(shareUrl); }
+                  toast.success("Link copied — paste it in Instagram!");
+                };
+                return (
+                  <div className="p-5 md:p-7 bg-white text-black space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-55">
+                      Your shareable link · expires in 8 h
+                    </p>
+                    <div
+                      onClick={copyLink}
+                      className="flex items-center gap-3 border-2 border-black p-4 cursor-pointer hover:bg-black/5 transition-colors group min-w-0"
+                    >
+                      <LinkIcon className="w-5 h-5 flex-shrink-0" />
+                      <span className="font-bold truncate text-sm md:text-base flex-1 min-w-0">
+                        {shareUrl}
+                      </span>
+                      <Copy className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <button
+                      onClick={copyLink}
+                      className="w-full bg-black text-white py-3 text-lg uppercase tracking-wider hover:bg-black/85 transition-colors"
+                      style={{ fontFamily: LG_FONT }}
+                    >
+                      Copy Link
+                    </button>
+
+                    {/* Social share */}
+                    <div className="pt-1 space-y-2">
+                      <p className="text-[9px] font-bold uppercase tracking-widest opacity-40">Share on</p>
+                      <div className="flex gap-2">
+                        {/* WhatsApp */}
+                        <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center py-3 transition-opacity hover:opacity-80"
+                          style={{ background: "#25D366" }}
+                          title="Share on WhatsApp"
+                        >
+                          <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                          </svg>
+                        </a>
+                        {/* Facebook */}
+                        <a href={fbUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center py-3 transition-opacity hover:opacity-80"
+                          style={{ background: "#1877F2" }}
+                          title="Share on Facebook"
+                        >
+                          <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
+                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                          </svg>
+                        </a>
+                        {/* Twitter / X */}
+                        <a href={twUrl} target="_blank" rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center py-3 transition-opacity hover:opacity-80"
+                          style={{ background: "#000" }}
+                          title="Share on X"
+                        >
+                          <svg viewBox="0 0 24 24" fill="white" width="20" height="20">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                        </a>
+                        {/* Instagram — copy + toast (no direct share URL) */}
+                        <button
+                          onClick={igCopy}
+                          className="flex-1 flex items-center justify-center py-3 transition-opacity hover:opacity-80"
+                          style={{ background: "linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)" }}
+                          title="Copy link for Instagram"
+                        >
+                          <svg viewBox="0 0 24 24" fill="white" width="22" height="22">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Link
