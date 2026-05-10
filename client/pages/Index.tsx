@@ -715,6 +715,10 @@ export default function Index() {
         setShowSignIn(false);
       } else {
         setAuthState("signed-out");
+        setUserEmail(null);
+        setStep(1);
+        setCreatedInvitation(null);
+        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
       }
     });
 
@@ -1209,14 +1213,14 @@ export default function Index() {
                         height: 28,
                         outline: "2px solid rgba(0,0,0,0.55)",
                         outlineOffset: "-1px",
-                      }}
+                        ...(formData.fontColor === c ? { "--tw-ring-offset-color": BRAND } : {}),
+                      } as React.CSSProperties}
                       className={cn(
                         "transition-all duration-200",
                         formData.fontColor === c
                           ? "ring-2 ring-white ring-offset-2 scale-110"
                           : "opacity-80 hover:opacity-100 hover:scale-105"
                       )}
-                      style={formData.fontColor === c ? { "--tw-ring-offset-color": BRAND } as React.CSSProperties : undefined}
                     />
                   ))}
                 </div>
