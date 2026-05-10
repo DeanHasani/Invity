@@ -99,6 +99,14 @@ const BG_PHRASES = [
 // DatePickerInput — custom calendar styled to the Invity orange palette
 // ─────────────────────────────────────────────────────────────────────────────
 
+type AppTheme = "orange" | "sky" | "teal" | "warmgray";
+const THEME_COLORS: Record<AppTheme, { hex: string; rgb: string }> = {
+  orange:   { hex: "#F05A28", rgb: "240,90,40"   },
+  sky:      { hex: "#0284C7", rgb: "2,132,199"   },
+  teal:     { hex: "#14B8A6", rgb: "20,184,166"  },
+  warmgray: { hex: "#7C6A5E", rgb: "124,106,94"  },
+};
+
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAY_LABELS  = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 
@@ -162,9 +170,9 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
       {open && (
         <div
           className="absolute bottom-full left-0 mb-3 z-50 shadow-2xl w-72"
-          style={{ background: "#1a0a00", border: "2px solid rgba(255,77,0,0.5)", fontFamily: "'Montserrat', sans-serif" }}
+          style={{ background: "#1a0a00", border: "2px solid rgba(var(--brand-rgb),0.5)", fontFamily: "'Montserrat', sans-serif" }}
         >
-          <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(255,77,0,0.2)" }}>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(var(--brand-rgb),0.2)" }}>
             <button
               type="button"
               onClick={() => shiftMonth(-1)}
@@ -187,7 +195,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
           <div className="px-3 py-3">
             <div className="grid grid-cols-7 mb-1">
               {DAY_LABELS.map(d => (
-                <div key={d} className="text-center text-[9px] font-bold tracking-wider pb-2" style={{ color: "rgba(255,77,0,0.55)" }}>
+                <div key={d} className="text-center text-[9px] font-bold tracking-wider pb-2" style={{ color: "rgba(var(--brand-rgb),0.6)" }}>
                   {d}
                 </div>
               ))}
@@ -208,11 +216,11 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
                     className="aspect-square flex items-center justify-center text-[13px] font-medium transition-all rounded-sm"
                     style={
                       isPast  ? { color: "rgba(255,255,255,0.2)", cursor: "not-allowed" } :
-                      isSel   ? { background: "#FF4D00", color: "#fff", fontWeight: 700 } :
-                      isToday ? { outline: "2px solid #FF4D00", outlineOffset: "-2px", color: "#FF4D00" } :
+                      isSel   ? { background: "var(--brand)", color: "#fff", fontWeight: 700 } :
+                      isToday ? { outline: "2px solid var(--brand)", outlineOffset: "-2px", color: "var(--brand)" } :
                                 { color: "rgba(255,255,255,0.75)" }
                     }
-                    onMouseEnter={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = "rgba(255,77,0,0.18)"; }}
+                    onMouseEnter={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = "rgba(var(--brand-rgb),0.18)"; }}
                     onMouseLeave={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = ""; }}
                   >
                     {day}
@@ -227,7 +235,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
               type="button"
               onClick={() => { onChange(""); setSelected(null); setOpen(false); }}
               className="w-full py-2.5 text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-60"
-              style={{ borderTop: "1px solid rgba(255,77,0,0.2)", color: "#FF4D00" }}
+              style={{ borderTop: "1px solid rgba(var(--brand-rgb),0.2)", color: "var(--brand)" }}
             >
               Clear date
             </button>
@@ -405,10 +413,13 @@ function TitleEffectPreview({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function AccountMenu({ email }: { email: string }) {
-  const [open, setOpen]             = useState(false);
+  const [open, setOpen]           = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const [deleting, setDeleting]     = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [hovered, setHovered]     = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const showSplash = open || hovered;
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -427,26 +438,62 @@ function AccountMenu({ email }: { email: string }) {
     await signOut();
   };
 
+  const fill = "rgba(255,255,255,0.85)";
+  const splashTransition = "transform 0.38s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease";
+  const dotTransition    = "transform 0.28s ease, opacity 0.22s ease";
+
   return (
     <div ref={ref} className="relative flex justify-end">
       <button
         onClick={() => { setOpen(o => !o); setConfirming(false); }}
-        className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity flex items-center gap-1.5"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity flex items-center gap-2"
         style={{ fontFamily: LG_FONT }}
       >
         ACCOUNT
-        <span className="text-[8px] opacity-70">{open ? "▲" : "▼"}</span>
+        {/* 8px layout anchor — SVG floats centered over it */}
+        <span style={{ position: "relative", display: "inline-block", width: "8px", height: "8px", flexShrink: 0 }}>
+          <svg
+            width="24" height="24"
+            viewBox="0 0 100 100"
+            style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", overflow: "visible" }}
+          >
+            {/* Dot — shrinks away when splash shows */}
+            <circle
+              cx="50" cy="50" r="13"
+              fill={fill}
+              style={{
+                transition: dotTransition,
+                transformOrigin: "50px 50px",
+                transform: showSplash ? "scale(0)" : "scale(1)",
+                opacity: showSplash ? 0 : 1,
+              }}
+            />
+            {/* Splash blob — irregular bezier curves, not a star */}
+            <path
+              d="M50,6 C59,1 70,7 71,17 C80,5 93,11 90,24 C99,23 101,38 92,41 C101,50 96,64 84,62 C89,75 80,83 68,77 C66,88 55,91 50,83 C45,91 34,88 32,77 C20,83 11,75 16,62 C4,64 -1,50 8,41 C-1,38 1,23 10,24 C7,11 20,5 29,17 C30,7 41,1 50,6 Z"
+              fill={fill}
+              style={{
+                transition: splashTransition,
+                transformOrigin: "50px 50px",
+                transform: showSplash ? "scale(1)" : "scale(0)",
+                opacity: showSplash ? 1 : 0,
+              }}
+            />
+          </svg>
+        </span>
       </button>
 
       {open && (
         <div
           className="absolute top-full right-0 mt-2 w-56 z-50 flex flex-col"
-          style={{ background: "#1a0800", border: "2px solid rgba(255,77,0,0.45)" }}
+          style={{ background: "#1a0800", border: "2px solid var(--brand-mid)" }}
         >
           {/* Email */}
           <div
             className="px-4 py-3 text-[10px] uppercase tracking-widest truncate"
-            style={{ color: "rgba(255,255,255,0.3)", borderBottom: "1px solid rgba(255,77,0,0.2)" }}
+            style={{ color: "rgba(255,255,255,0.3)", borderBottom: "1px solid var(--brand-dim)" }}
           >
             {email}
           </div>
@@ -519,7 +566,7 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
     >
       <div
         className="w-full max-w-sm flex flex-col items-center text-center gap-6 p-8 relative"
-        style={{ background: "#1a0800", border: "2px solid rgba(255,77,0,0.45)" }}
+        style={{ background: "#1a0800", border: "2px solid var(--brand-mid)" }}
         onClick={e => e.stopPropagation()}
       >
         <button
@@ -530,7 +577,7 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="space-y-1">
-          <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "#FF4D00" }}>
+          <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--brand)" }}>
             Sign In to Continue
           </p>
           <p className="text-xs opacity-50">
@@ -641,6 +688,12 @@ export default function Index() {
   const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [theme, setTheme] = useState<AppTheme>(() =>
+    (localStorage.getItem("invity_theme") as AppTheme) ?? "orange"
+  );
+  const { hex: BRAND, rgb: B_RGB } = THEME_COLORS[theme];
+  const B_MID = `rgba(${B_RGB},0.45)`;
+  const B_DIM = `rgba(${B_RGB},0.2)`;
   const [effectPreviewKey, setEffectPreviewKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -841,7 +894,7 @@ export default function Index() {
   if (rateLimited) return (
     <div
       className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-6 select-none"
-      style={{ background: "#FF4D00", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
+      style={{ background: BRAND, color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
     >
       <div className="text-7xl">⏰</div>
       <h1 className="text-5xl md:text-7xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
@@ -851,12 +904,12 @@ export default function Index() {
         TWO LINKS A DAY
       </p>
       <p className="text-base opacity-70 max-w-sm">
-        You've already created an invitation today on this demo. Come back tomorrow and let's party again.
+        You've hit your 2-link daily limit. Come back tomorrow and let's party again.
       </p>
       <button
         onClick={() => setRateLimited(false)}
-        className="mt-2 bg-white text-[#FF4D00] text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
-        style={{ fontFamily: LG_FONT }}
+        className="mt-2 bg-white text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
+        style={{ fontFamily: LG_FONT, color: BRAND }}
       >
         Go Back
       </button>
@@ -880,10 +933,12 @@ export default function Index() {
       className="min-h-screen w-full text-white flex flex-col select-none relative overflow-x-hidden"
       style={{
         fontFamily: "'Montserrat', sans-serif",
-        backgroundColor: step === 2 ? (DESIGN_BG[formData.designId] ?? "#FF4D00") : "#FF4D00",
-        transition: "background-color 0.4s ease",
-      }}
+        backgroundColor: step === 2 ? (DESIGN_BG[formData.designId] ?? BRAND) : BRAND,
+        transition: "background-color 0.5s ease",
+        "--brand": BRAND, "--brand-mid": B_MID, "--brand-dim": B_DIM, "--brand-rgb": B_RGB,
+      } as React.CSSProperties}
     >
+      <style>{`.brand-hover-text:hover { color: var(--brand) !important; }`}</style>
 
       <InAppBrowserBanner />
       {/* ── Floating background phrases ── */}
@@ -904,24 +959,45 @@ export default function Index() {
 
       {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 p-4 md:p-8 flex justify-between items-start md:items-center z-40 pointer-events-none">
-        <h1
-          className="text-2xl md:text-4xl tracking-tighter leading-none uppercase opacity-90 pointer-events-auto hover:opacity-100 transition-opacity"
-          style={{ fontFamily: LG_FONT, cursor: step === 1 ? "default" : "pointer" }}
-          onClick={() => {
-            if (step === 1) return;
-            if (step === 5) { resetBuilder(); return; }
-            gsap.killTweensOf(containerRef.current);
-            gsap.to(containerRef.current, {
-              opacity: 0, x: 30, duration: 0.22, ease: "power2.in",
-              onComplete: () => {
-                setStep(1);
-                gsap.fromTo(containerRef.current, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
-              },
-            });
-          }}
-        >
-          INVITY
-        </h1>
+        <div className="flex flex-col pointer-events-auto gap-1.5">
+          <h1
+            className="text-2xl md:text-4xl tracking-tighter leading-none uppercase opacity-90 hover:opacity-100 transition-opacity"
+            style={{ fontFamily: LG_FONT, cursor: step === 1 ? "default" : "pointer" }}
+            onClick={() => {
+              if (step === 1) return;
+              if (step === 5) { resetBuilder(); return; }
+              gsap.killTweensOf(containerRef.current);
+              gsap.to(containerRef.current, {
+                opacity: 0, x: 30, duration: 0.22, ease: "power2.in",
+                onComplete: () => {
+                  setStep(1);
+                  gsap.fromTo(containerRef.current, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
+                },
+              });
+            }}
+          >
+            INVITY
+          </h1>
+          <div className="flex gap-[7px]">
+            {(["orange", "sky", "teal", "warmgray"] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => { setTheme(t); localStorage.setItem("invity_theme", t); }}
+                style={{
+                  width: "15px", height: "15px",
+                  borderRadius: "2px",
+                  background: THEME_COLORS[t].hex,
+                  border: theme === t ? "2px solid rgba(255,255,255,0.9)" : "2px solid rgba(255,255,255,0.22)",
+                  boxShadow: theme === t ? "0 0 0 1.5px rgba(255,255,255,0.35)" : "none",
+                  transition: "transform 0.18s ease, box-shadow 0.18s ease",
+                  cursor: "pointer", padding: 0, flexShrink: 0,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.4)")}
+                onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+              />
+            ))}
+          </div>
+        </div>
         <div className="text-right pointer-events-auto space-y-2">
           {/* Sign in / Account — above phrase + dots */}
           {authState === "signed-in" ? (
@@ -956,7 +1032,7 @@ export default function Index() {
           {step > 1 && (
             <button
               onClick={prevStep}
-              className="hidden md:flex fixed left-0 top-1/2 -translate-y-1/2 z-30 w-14 h-[38vh] bg-white/5 hover:bg-white text-white hover:text-[#FF4D00] transition-all duration-300 group items-center justify-center border-y border-r border-white/20 hover:border-white"
+              className="hidden md:flex fixed left-0 top-1/2 -translate-y-1/2 z-30 w-14 h-[38vh] bg-white/5 hover:bg-white text-white brand-hover-text transition-all duration-300 group items-center justify-center border-y border-r border-white/20 hover:border-white"
               aria-label="Previous step"
             >
               <span
@@ -974,7 +1050,7 @@ export default function Index() {
               "hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 w-14 h-[38vh] transition-all duration-300 group items-center justify-center border-y border-l",
               createMutation.isPending
                 ? "bg-white/20 border-white/20 cursor-not-allowed"
-                : "bg-white/10 hover:bg-white text-white hover:text-[#FF4D00] border-white/20 hover:border-white"
+                : "bg-white/10 hover:bg-white text-white brand-hover-text border-white/20 hover:border-white"
             )}
             aria-label={step === 4 ? "Create" : "Next step"}
           >
@@ -1061,12 +1137,12 @@ export default function Index() {
                   <button
                     key={d.id}
                     onClick={() => setFormData({ ...formData, designId: d.id as any })}
-                    style={d.style}
+                    style={{ ...(d.style ?? {}), ...(formData.designId === d.id ? { "--tw-ring-offset-color": BRAND } : {}) } as React.CSSProperties}
                     className={cn(
                       "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
                       d.color,
                       formData.designId === d.id
-                        ? "scale-[1.02] ring-4 ring-white ring-offset-2 ring-offset-[#FF4D00]"
+                        ? "scale-[1.02] ring-4 ring-white ring-offset-2"
                         : "opacity-65 hover:opacity-95"
                     )}
                   >
@@ -1094,10 +1170,9 @@ export default function Index() {
                       onClick={() => setFormData({ ...formData, fontId: f.id })}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
-                        isSel
-                          ? "bg-white text-[#FF4D00] border-white"
-                          : "border-white/30 opacity-65 hover:opacity-95"
+                        isSel ? "bg-white border-white" : "border-white/30 opacity-65 hover:opacity-95"
                       )}
+                      style={isSel ? { color: BRAND } : undefined}
                     >
                       <span className="text-xl md:text-2xl uppercase" style={{ fontFamily: f.family }}>
                         {f.label}
@@ -1138,9 +1213,10 @@ export default function Index() {
                       className={cn(
                         "transition-all duration-200",
                         formData.fontColor === c
-                          ? "ring-2 ring-white ring-offset-2 ring-offset-[#FF4D00] scale-110"
+                          ? "ring-2 ring-white ring-offset-2 scale-110"
                           : "opacity-80 hover:opacity-100 hover:scale-105"
                       )}
+                      style={formData.fontColor === c ? { "--tw-ring-offset-color": BRAND } as React.CSSProperties : undefined}
                     />
                   ))}
                 </div>
@@ -1167,10 +1243,9 @@ export default function Index() {
                       }}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
-                        isSel
-                          ? "bg-white text-[#FF4D00] border-white"
-                          : "border-white/30 opacity-65 hover:opacity-95"
+                        isSel ? "bg-white border-white" : "border-white/30 opacity-65 hover:opacity-95"
                       )}
+                      style={isSel ? { color: BRAND } : undefined}
                     >
                       <span className="text-2xl md:text-3xl uppercase" style={{ fontFamily: LG_FONT }}>{e.label}</span>
                       {isSel && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
@@ -1325,7 +1400,7 @@ export default function Index() {
 
       {/* ── Mobile bottom nav ── */}
       {step < 5 && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-white/20 bg-[#FF4D00]">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-white/20" style={{ background: BRAND }}>
           {step > 1 ? (
             <button
               onClick={prevStep}

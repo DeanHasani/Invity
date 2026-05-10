@@ -1,13 +1,31 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FloatingPhrases } from "@/components/FloatingPhrases";
 
 const LG_FONT = "'Luckiest Guy', cursive";
 
+const THEME_COLORS: Record<string, string> = {
+  orange:   "#F05A28",
+  sky:      "#0284C7",
+  teal:     "#14B8A6",
+  warmgray: "#7C6A5E",
+};
+
+function useBrand() {
+  const [brand] = useState(() => {
+    const t = localStorage.getItem("invity_theme") ?? "orange";
+    return THEME_COLORS[t] ?? THEME_COLORS.orange;
+  });
+  return brand;
+}
+
 export default function TermsOfService() {
+  const brand = useBrand();
+
   return (
     <div
       className="min-h-screen w-full text-white flex flex-col select-none relative overflow-x-hidden"
-      style={{ fontFamily: "'Montserrat', sans-serif", backgroundColor: "#FF4D00" }}
+      style={{ fontFamily: "'Montserrat', sans-serif", backgroundColor: brand }}
     >
       <FloatingPhrases active />
 
@@ -40,7 +58,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Free tier">
-            Free accounts are limited to one invitation link per account. Each link expires 8 hours after creation. This limit exists to ensure fair usage and may change in the future as paid tiers are introduced.
+            Free accounts are limited to two invitation links per day. Each link expires 8 hours after creation. This limit exists to ensure fair usage and may change in the future as paid tiers are introduced.
           </Block>
 
           <Block title="Acceptable use">

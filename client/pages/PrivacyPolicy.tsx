@@ -1,13 +1,26 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FloatingPhrases } from "@/components/FloatingPhrases";
 
 const LG_FONT = "'Luckiest Guy', cursive";
 
+const THEME_COLORS: Record<string, string> = {
+  orange:   "#F05A28",
+  sky:      "#0284C7",
+  teal:     "#14B8A6",
+  warmgray: "#7C6A5E",
+};
+
 export default function PrivacyPolicy() {
+  const [brand] = useState(() => {
+    const t = localStorage.getItem("invity_theme") ?? "orange";
+    return THEME_COLORS[t] ?? THEME_COLORS.orange;
+  });
+
   return (
     <div
       className="min-h-screen w-full text-white flex flex-col select-none relative overflow-x-hidden"
-      style={{ fontFamily: "'Montserrat', sans-serif", backgroundColor: "#FF4D00" }}
+      style={{ fontFamily: "'Montserrat', sans-serif", backgroundColor: brand }}
     >
       <FloatingPhrases active />
 
@@ -40,7 +53,7 @@ export default function PrivacyPolicy() {
           </Block>
 
           <Block title="How we use it">
-            Your email is used solely to associate invitations with your account and to limit creation to one free invitation per account. We do not sell, share, or use your data for advertising. RSVP responses are stored so you can see who responded to your invitation.
+            Your email is used solely to associate invitations with your account and to limit creation to two free invitations per day. We do not sell, share, or use your data for advertising. RSVP responses are stored so you can see who responded to your invitation.
           </Block>
 
           <Block title="Third-party services">
