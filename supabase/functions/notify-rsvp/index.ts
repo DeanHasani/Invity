@@ -4,15 +4,25 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: CORS });
+  }
+
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+    return new Response("Method Not Allowed", { status: 405, headers: CORS });
   }
 
   const { invitation_id, name, status } = await req.json();
 
   if (!invitation_id || !name || !status) {
-    return new Response("Missing fields", { status: 400 });
+    return new Response("Missing fields", { status: 400, headers: CORS });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -24,7 +34,7 @@ Deno.serve(async (req) => {
     .single();
 
   if (error || !invitation?.user_email) {
-    return new Response("Invitation not found", { status: 404 });
+    return new Response("Invitation not found", { status: 404, headers: CORS });
   }
 
   const { title, user_email } = invitation;
@@ -58,10 +68,10 @@ Deno.serve(async (req) => {
 
   if (!res.ok) {
     console.error("Resend error:", await res.text());
-    return new Response("Email send failed", { status: 500 });
+    return new Response("Email send failed", { status: 500, headers: CORS });
   }
 
   return new Response(JSON.stringify({ ok: true }), {
-    headers: { "Content-Type": "application/json" },
+    headers: { ...CORS, "Content-Type": "application/json" },
   });
 });
