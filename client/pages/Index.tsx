@@ -399,100 +399,12 @@ function TitleEffectPreview({
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Privacy Policy modal
-// ─────────────────────────────────────────────────────────────────────────────
-
-function PrivacyPolicyModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
-      style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(8px)" }}
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-lg max-h-[80vh] overflow-y-auto"
-        style={{ background: "#110500", border: "2px solid rgba(255,77,0,0.35)" }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between px-6 py-4" style={{ background: "#110500", borderBottom: "1px solid rgba(255,77,0,0.2)" }}>
-          <h2 className="text-xl uppercase tracking-wider" style={{ fontFamily: LG_FONT, color: "#FF4D00" }}>
-            Privacy Policy
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-white/40 hover:text-white transition-colors text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5 text-[13px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'Montserrat', sans-serif" }}>
-          <p className="text-[11px] uppercase tracking-widest" style={{ color: "rgba(255,77,0,0.6)" }}>
-            Last updated: May 2026
-          </p>
-
-          <p>
-            Invity is a personal invitation creator. We take your privacy seriously and keep data collection to the minimum needed to run the service.
-          </p>
-
-          <Section title="What we collect">
-            <li>Your <strong>Google account email address</strong> when you sign in — used only to send you RSVP notifications.</li>
-            <li>The <strong>content of invitations you create</strong> (title, message, date, location, design choices) — stored to generate your shareable link.</li>
-            <li>The <strong>name and response</strong> (accept/decline) submitted by your guests when they open your invitation link.</li>
-          </Section>
-
-          <Section title="How we use it">
-            <li>Your email is used <em>only</em> to notify you when a guest responds to your invitation.</li>
-            <li>We do not sell, share, or use your data for advertising or analytics of any kind.</li>
-            <li>Guest names and responses are visible only to you, the invitation creator.</li>
-          </Section>
-
-          <Section title="Data retention">
-            <li>Invitation links expire automatically after 8 hours.</li>
-            <li>You can permanently delete all your invitations and account data at any time via <strong>Account → Delete Everything</strong>.</li>
-            <li>If you choose to sign out without deleting, your data remains stored until you return or delete it.</li>
-          </Section>
-
-          <Section title="Third-party services">
-            <li><strong>Google OAuth</strong> — for sign-in. Google's own privacy policy applies to the authentication step.</li>
-            <li><strong>Supabase</strong> — database and authentication infrastructure. Data is stored on Supabase-managed servers.</li>
-            <li><strong>Resend</strong> — used to deliver RSVP notification emails to your inbox.</li>
-          </Section>
-
-          <Section title="Your rights">
-            <li>You can sign out at any time without losing your data.</li>
-            <li>You can delete everything — all invitations and associated data — instantly via the Account menu.</li>
-            <li>You have the right to request data deletion by contacting us directly.</li>
-          </Section>
-
-          <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-            Questions? Reach out at <span style={{ color: "#FF4D00" }}>hasanidean97@gmail.com</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-[11px] uppercase tracking-widest font-bold" style={{ color: "#FF4D00" }}>{title}</p>
-      <ul className="space-y-1 pl-3 list-none">
-        {children}
-      </ul>
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Account menu
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AccountMenu({ email, onPrivacy }: { email: string; onPrivacy: () => void }) {
+function AccountMenu({ email }: { email: string }) {
   const [open, setOpen]             = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting]     = useState(false);
@@ -549,18 +461,11 @@ function AccountMenu({ email, onPrivacy }: { email: string; onPrivacy: () => voi
                 Sign Out
               </button>
               <button
-                onClick={() => { onPrivacy(); setOpen(false); }}
-                className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
-                style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
-              >
-                Privacy Policy
-              </button>
-              <button
                 onClick={() => setConfirming(true)}
                 className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
                 style={{ fontFamily: LG_FONT, color: "rgba(255,80,80,0.8)" }}
               >
-                Delete Everything
+                Delete Account
               </button>
             </>
           ) : (
@@ -729,7 +634,7 @@ function FloatingPhrases({ active }: { active: boolean }) {
 export default function Index() {
   const [authState, setAuthState]     = useState<"loading" | "signed-in" | "signed-out">("loading");
   const [userEmail, setUserEmail]     = useState<string | null>(null);
-  const [showPrivacy, setShowPrivacy] = useState(false);
+
   const [showSignIn, setShowSignIn]   = useState(false);
 
   const [step, setStep] = useState(1);
@@ -835,14 +740,12 @@ export default function Index() {
       const creatorId = getCreatorId();
       const since24h = new Date(Date.now() - 24 * 3_600_000).toISOString();
       if (userEmail) {
-        // creation_log checks are permanent (no time window) — survives account deletion + re-signup
-        // invitations check is a 24h fallback in case creation_log was accidentally wiped
         const [{ count: logEmailCount }, { count: logDeviceCount }, { count: invCount }] = await Promise.all([
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail),
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId),
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since24h),
+          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId).gte("created_at", since24h),
           supabase.from("invitations").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since24h),
         ]);
-        if ((logEmailCount ?? 0) >= 1 || (logDeviceCount ?? 0) >= 1 || (invCount ?? 0) >= 1)
+        if ((logEmailCount ?? 0) >= 2 || (logDeviceCount ?? 0) >= 2 || (invCount ?? 0) >= 2)
           throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
       } else {
         const { count } = await supabase
@@ -850,7 +753,7 @@ export default function Index() {
           .select("id", { count: "exact", head: true })
           .eq("creator_id", creatorId)
           .gte("created_at", since24h);
-        if ((count ?? 0) >= 1) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
+        if ((count ?? 0) >= 2) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
       }
 
       const id = nanoid(10);
@@ -945,7 +848,7 @@ export default function Index() {
         WHOOPSIE
       </h1>
       <p className="text-xl md:text-2xl uppercase tracking-widest font-bold" style={{ fontFamily: LG_FONT }}>
-        ONE LINK A DAY
+        TWO LINKS A DAY
       </p>
       <p className="text-base opacity-70 max-w-sm">
         You've already created an invitation today on this demo. Come back tomorrow and let's party again.
@@ -1022,7 +925,7 @@ export default function Index() {
         <div className="text-right pointer-events-auto space-y-2">
           {/* Sign in / Account — above phrase + dots */}
           {authState === "signed-in" ? (
-            <AccountMenu email={userEmail ?? ""} onPrivacy={() => setShowPrivacy(true)} />
+            <AccountMenu email={userEmail ?? ""} />
           ) : (
             <button
               onClick={() => setShowSignIn(true)}
@@ -1456,16 +1359,33 @@ export default function Index() {
         LET'S CELEBRATE
       </div>
 
-      {/* Copyright */}
-      <div
-        className="fixed bottom-3 right-4 z-20 text-[10px] uppercase tracking-widest pointer-events-none select-none"
-        style={{ color: "rgba(255,255,255,0.18)", fontFamily: "'Montserrat', sans-serif" }}
-      >
-        © {new Date().getFullYear()} Invity. All rights reserved.
+      {/* Footer */}
+      <div className="fixed bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-5 px-4 pointer-events-none select-none">
+        <Link
+          to="/privacy"
+          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
+          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+        >
+          Privacy Policy
+        </Link>
+        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
+        <Link
+          to="/terms"
+          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
+          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+        >
+          Terms
+        </Link>
+        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
+        <span className="text-[13px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.75)", fontFamily: "'Montserrat', sans-serif" }}>
+          © {new Date().getFullYear()} Invity
+        </span>
       </div>
 
-      {/* Privacy Policy modal */}
-      {showPrivacy && <PrivacyPolicyModal onClose={() => setShowPrivacy(false)} />}
 
       {/* Google sign-in modal */}
       {showSignIn && (

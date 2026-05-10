@@ -1,0 +1,81 @@
+import { Link } from "react-router-dom";
+import { FloatingPhrases } from "@/components/FloatingPhrases";
+
+const LG_FONT = "'Luckiest Guy', cursive";
+
+export default function PrivacyPolicy() {
+  return (
+    <div
+      className="min-h-screen w-full text-white flex flex-col select-none relative overflow-x-hidden"
+      style={{ fontFamily: "'Montserrat', sans-serif", backgroundColor: "#FF4D00" }}
+    >
+      <FloatingPhrases active />
+
+      {/* Back */}
+      <div className="relative z-10 px-6 pt-6">
+        <Link
+          to="/"
+          className="text-[22px] uppercase tracking-widest opacity-80 hover:opacity-100 transition-opacity"
+          style={{ fontFamily: LG_FONT }}
+        >
+          Back
+        </Link>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pb-16 pt-8">
+        <div className="w-full max-w-2xl space-y-8">
+          <h1
+            className="text-4xl md:text-6xl uppercase tracking-tight leading-none"
+            style={{ fontFamily: LG_FONT }}
+          >
+            Privacy Policy
+          </h1>
+          <p className="text-sm opacity-60 uppercase tracking-widest" style={{ fontFamily: LG_FONT }}>
+            Last updated: {new Date().getFullYear()}
+          </p>
+
+          <Block title="What we collect">
+            When you sign in with Google, we store your email address to identify your account and enforce fair usage limits. When you create an invitation, we store the invitation content (title, date, location, theme, message) along with your email and an anonymous device identifier. Guests who view an invitation are assigned an anonymous session — no personal data is collected from them unless they submit an RSVP, in which case we store their name and response.
+          </Block>
+
+          <Block title="How we use it">
+            Your email is used solely to associate invitations with your account and to limit creation to one free invitation per account. We do not sell, share, or use your data for advertising. RSVP responses are stored so you can see who responded to your invitation.
+          </Block>
+
+          <Block title="Third-party services">
+            Invity is built on Supabase (database and authentication) and uses Google OAuth for sign-in. Your sign-in is handled directly by Google — we never see your Google password. Data is stored on Supabase infrastructure. Please refer to their respective privacy policies for how they handle data.
+          </Block>
+
+          <Block title="Data retention">
+            Invitation links expire automatically after 8 hours. Your account data (email, creation history) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database and signs you out.
+          </Block>
+
+          <Block title="Cookies & storage">
+            We use browser local storage to store an anonymous device identifier used for rate-limiting purposes. No advertising cookies are used.
+          </Block>
+
+          <Block title="Contact">
+            For any privacy-related questions, contact me at hasanidean97@gmail.com.
+          </Block>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h2
+        className="text-xl md:text-2xl uppercase tracking-tight"
+        style={{ fontFamily: LG_FONT }}
+      >
+        {title}
+      </h2>
+      <p className="text-[15px] leading-relaxed opacity-85">
+        {children}
+      </p>
+    </div>
+  );
+}
