@@ -434,7 +434,9 @@ function AccountMenu({ email }: { email: string }) {
 
   const handleDeleteEverything = async () => {
     setDeleting(true);
-    await supabase.from("invitations").delete().eq("user_email", email);
+    try {
+      await supabase.functions.invoke("delete-account", { body: {} });
+    } catch (_) { /* edge fn handles deletion; sign out regardless */ }
     await signOut();
   };
 
@@ -1069,7 +1071,7 @@ export default function Index() {
       )}
 
       {/* ── Main content ── */}
-      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-28 md:pb-20 px-6 md:px-16" style={{ zIndex: 2 }}>
+      <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-40 md:pb-20 px-6 md:px-16" style={{ zIndex: 2 }}>
         <div ref={containerRef} className="max-w-3xl w-full relative">
           {/* Interceptor — covers only the form card so the hand cursor stays narrow */}
           {authState !== "signed-in" && step < 5 && (
@@ -1403,32 +1405,55 @@ export default function Index() {
       </main>
 
       {/* ── Mobile bottom nav ── */}
-      {step < 5 && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex border-t border-white/20" style={{ background: BRAND }}>
-          {step > 1 ? (
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col border-t border-white/20" style={{ background: BRAND }}>
+        {step < 5 && (
+          <div className="flex border-b border-white/10">
+            {step > 1 ? (
+              <button
+                onClick={prevStep}
+                className="flex-1 py-5 font-bold uppercase tracking-widest text-sm border-r border-white/20 hover:bg-white/10 transition-colors"
+                style={{ fontFamily: LG_FONT }}
+              >
+                BACK
+              </button>
+            ) : (
+              <div className="flex-1" />
+            )}
             <button
-              onClick={prevStep}
-              className="flex-1 py-5 font-bold uppercase tracking-widest text-sm border-r border-white/20 hover:bg-white/10 transition-colors"
+              onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
+              disabled={createMutation.isPending}
+              className={cn(
+                "flex-1 py-5 font-bold uppercase tracking-widest text-sm transition-colors",
+                createMutation.isPending ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"
+              )}
               style={{ fontFamily: LG_FONT }}
             >
-              BACK
+              {createMutation.isPending ? "..." : step === 4 ? "CREATE!" : "NEXT"}
             </button>
-          ) : (
-            <div className="flex-1" />
-          )}
-          <button
-            onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
-            disabled={createMutation.isPending}
-            className={cn(
-              "flex-1 py-5 font-bold uppercase tracking-widest text-sm transition-colors",
-              createMutation.isPending ? "opacity-40 cursor-not-allowed" : "hover:bg-white/10"
-            )}
-            style={{ fontFamily: LG_FONT }}
+          </div>
+        )}
+        <div className="flex items-center justify-center gap-3 py-2.5">
+          <Link
+            to="/privacy"
+            className="text-[11px] uppercase tracking-widest"
+            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
           >
-            {createMutation.isPending ? "..." : step === 4 ? "CREATE!" : "NEXT"}
-          </button>
+            Privacy
+          </Link>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
+          <Link
+            to="/terms"
+            className="text-[11px] uppercase tracking-widest"
+            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
+          >
+            Terms
+          </Link>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
+          <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Montserrat', sans-serif" }}>
+            © {new Date().getFullYear()} Invity
+          </span>
         </div>
-      )}
+      </div>
 
       {/* Decorative BG text */}
       <div
@@ -1438,8 +1463,8 @@ export default function Index() {
         LET'S CELEBRATE
       </div>
 
-      {/* Footer */}
-      <div className="fixed bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-5 px-4 pointer-events-none select-none">
+      {/* Footer — desktop only, mobile uses the bottom nav bar */}
+      <div className="hidden md:flex fixed bottom-4 left-0 right-0 z-20 items-center justify-center gap-5 px-4 pointer-events-none select-none">
         <Link
           to="/privacy"
           className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
