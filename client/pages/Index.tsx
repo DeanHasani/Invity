@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CANVAS_MAP, DESIGN_BG, DecryptedText } from "@/components/Postcard";
-import { InAppBrowserBanner } from "@/components/InAppBrowserBanner";
+import { InAppBrowserBanner, detectInApp } from "@/components/InAppBrowserBanner";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -685,6 +685,7 @@ export default function Index() {
   const [userEmail, setUserEmail]     = useState<string | null>(null);
 
   const [showSignIn, setShowSignIn]   = useState(false);
+  const [showInAppPrompt, setShowInAppPrompt] = useState(false);
 
   const [step, setStep] = useState(1);
   const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
@@ -710,7 +711,7 @@ export default function Index() {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user?.email) {
         setUserEmail(session.user.email);
         setAuthState("signed-in");
@@ -718,9 +719,13 @@ export default function Index() {
       } else {
         setAuthState("signed-out");
         setUserEmail(null);
-        setStep(1);
-        setCreatedInvitation(null);
-        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
+        // Only wipe the builder on an actual sign-out — INITIAL_SESSION also
+        // lands here on page load and must not clear a restored draft
+        if (event === "SIGNED_OUT") {
+          setStep(1);
+          setCreatedInvitation(null);
+          setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
+        }
       }
     });
 
@@ -755,6 +760,20 @@ export default function Index() {
   });
 
   useEffect(() => { randomizePhrases(); }, []);
+
+  // ── Draft hand-off from an in-app browser (?draft=…) ──────────────────────
+  // When CREATE is pressed inside LinkedIn/Instagram etc., we reopen the page
+  // in a real browser with the form data in the URL so nothing is lost.
+  useEffect(() => {
+    const draft = new URLSearchParams(window.location.search).get("draft");
+    if (!draft) return;
+    try {
+      const data = JSON.parse(draft) as Partial<CreateInvitationRequest>;
+      setFormData(f => ({ ...f, ...data }));
+      setStep(4);
+    } catch { /* malformed draft — start fresh */ }
+    window.history.replaceState({}, "", window.location.pathname);
+  }, []);
 
   const randomizePhrases = () => {
     setPhraseIndices({
@@ -867,6 +886,12 @@ export default function Index() {
 
   const handleCreate = () => {
     if (authState !== "signed-in") {
+      // Google OAuth is blocked inside in-app browsers (LinkedIn, Instagram…) —
+      // hand the draft over to a real browser instead of opening the sign-in modal
+      if (detectInApp().inApp) {
+        setShowInAppPrompt(true);
+        return;
+      }
       pendingCreateRef.current = true;
       setShowSignIn(true);
       return;
@@ -967,7 +992,6 @@ export default function Index() {
     >
       <style>{`.brand-hover-text:hover { color: var(--brand) !important; }`}</style>
 
-      <InAppBrowserBanner />
       {/* ── Floating background phrases ── */}
       <FloatingPhrases active={authState === "signed-out"} />
 
@@ -1507,6 +1531,15 @@ export default function Index() {
       {/* Google sign-in modal */}
       {showSignIn && (
         <GoogleSignInModal onClose={() => { pendingCreateRef.current = false; setShowSignIn(false); }} />
+      )}
+
+      {/* In-app browser hand-off — shown only when CREATE needs Google auth */}
+      {showInAppPrompt && (
+        <InAppBrowserBanner
+          dismissible
+          onDismiss={() => setShowInAppPrompt(false)}
+          url={`${window.location.origin}/?draft=${encodeURIComponent(JSON.stringify(formData))}`}
+        />
       )}
     </div>
   );

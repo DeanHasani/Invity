@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-function detectInApp(): { inApp: boolean; appName: string } {
+export function detectInApp(): { inApp: boolean; appName: string } {
   const ua = navigator.userAgent || "";
   if (/LinkedIn/i.test(ua))                                                      return { inApp: true, appName: "LinkedIn" };
   if (/FBAN|FBAV|FB_IAB|FB4A|FBIOS/i.test(ua))                                  return { inApp: true, appName: "Facebook" };
@@ -28,7 +28,16 @@ function openInSafari(url: string) {
   window.location.href = "x-safari-" + url;
 }
 
-export function InAppBrowserBanner({ dismissible = false }: { dismissible?: boolean }) {
+export function InAppBrowserBanner({
+  dismissible = false,
+  url: urlProp,
+  onDismiss,
+}: {
+  dismissible?: boolean;
+  /** URL to open in the external browser — defaults to the current page */
+  url?: string;
+  onDismiss?: () => void;
+}) {
   const [show, setShow]         = useState(false);
   const [appName, setAppName]   = useState("");
   const [isAndroid, setIsAndroid] = useState(false);
@@ -44,7 +53,7 @@ export function InAppBrowserBanner({ dismissible = false }: { dismissible?: bool
 
   if (!show) return null;
 
-  const url = window.location.href;
+  const url = urlProp ?? window.location.href;
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black/75 backdrop-blur-sm p-4">
@@ -85,7 +94,7 @@ export function InAppBrowserBanner({ dismissible = false }: { dismissible?: bool
 
         {dismissible && (
           <button
-            onClick={() => setShow(false)}
+            onClick={() => (onDismiss ? onDismiss() : setShow(false))}
             className="mt-4 text-xs text-gray-400 underline underline-offset-2"
           >
             Continue anyway
