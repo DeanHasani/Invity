@@ -40,6 +40,10 @@ Deno.serve(async (req) => {
   const { title, user_email } = invitation;
   const emoji = status === "accepted" ? "🎉" : "😔";
   const statusWord = status === "accepted" ? "accepted" : "declined";
+  const heading =
+    status === "accepted"
+      ? `Looks like somebody is in for the <em>${title}</em> event!`
+      : `Somebody can't make it to the <em>${title}</em> event.`;
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -53,7 +57,7 @@ Deno.serve(async (req) => {
       subject: `${emoji} ${name} ${statusWord} your invitation`,
       html: `
         <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;">
-          <h2 style="color:#FF4D00;margin:0 0 16px;">${emoji} New RSVP on <em>${title}</em></h2>
+          <h2 style="color:#FF4D00;margin:0 0 16px;">${emoji} ${heading}</h2>
           <p style="font-size:16px;margin:0 0 8px;">
             <strong>${name}</strong> has <strong>${statusWord}</strong> your invitation.
           </p>
