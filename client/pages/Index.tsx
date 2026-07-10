@@ -862,6 +862,27 @@ export default function Index() {
     },
   });
 
+  // ── Create gate — sign-in is only required at the very last step ──────────
+  const pendingCreateRef = useRef(false);
+
+  const handleCreate = () => {
+    if (authState !== "signed-in") {
+      pendingCreateRef.current = true;
+      setShowSignIn(true);
+      return;
+    }
+    createMutation.mutate(formData);
+  };
+
+  // Once sign-in completes, finish the create the user already asked for
+  useEffect(() => {
+    if (authState === "signed-in" && pendingCreateRef.current) {
+      pendingCreateRef.current = false;
+      createMutation.mutate(formData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState]);
+
   const copyLink = () => {
     if (!createdInvitation) return;
     const url = `${window.location.origin}/${createdInvitation.id}`;
@@ -1050,7 +1071,7 @@ export default function Index() {
             </button>
           )}
           <button
-            onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
+            onClick={step === 4 ? handleCreate : nextStep}
             disabled={createMutation.isPending}
             className={cn(
               "hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 w-14 h-[38vh] transition-all duration-300 group items-center justify-center border-y border-l",
@@ -1073,14 +1094,6 @@ export default function Index() {
       {/* ── Main content ── */}
       <main className="flex-1 flex items-start justify-center pt-28 md:pt-40 pb-40 md:pb-20 px-6 md:px-16" style={{ zIndex: 2 }}>
         <div ref={containerRef} className="max-w-3xl w-full relative">
-          {/* Interceptor — covers only the form card so the hand cursor stays narrow */}
-          {authState !== "signed-in" && step < 5 && (
-            <div
-              className="absolute inset-0 z-10 cursor-pointer"
-              onClick={() => setShowSignIn(true)}
-            />
-          )}
-
           {/* ── STEP 1: Event details ── */}
           {step === 1 && (
             <div className="space-y-6">
@@ -1420,7 +1433,7 @@ export default function Index() {
               <div className="flex-1" />
             )}
             <button
-              onClick={step === 4 ? () => createMutation.mutate(formData) : nextStep}
+              onClick={step === 4 ? handleCreate : nextStep}
               disabled={createMutation.isPending}
               className={cn(
                 "flex-1 py-5 font-bold uppercase tracking-widest text-sm transition-colors",
@@ -1493,7 +1506,7 @@ export default function Index() {
 
       {/* Google sign-in modal */}
       {showSignIn && (
-        <GoogleSignInModal onClose={() => setShowSignIn(false)} />
+        <GoogleSignInModal onClose={() => { pendingCreateRef.current = false; setShowSignIn(false); }} />
       )}
     </div>
   );
