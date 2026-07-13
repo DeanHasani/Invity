@@ -76,11 +76,9 @@ export default function InvitationView() {
       return;
     }
 
-    const viewerToken = getViewerToken();
-
     supabase
-      .from("invitations")
-      .select("*")
+      .from("invitation_public")
+      .select("id, title, message, design_id, effect_id, font_id, font_color, date, location, expires_at")
       .eq("id", id)
       .single()
       .then(({ data, error }) => {
@@ -88,12 +86,6 @@ export default function InvitationView() {
 
         const expiry = new Date(data.expires_at as string).getTime();
         if (Date.now() > expiry) { setState("expired"); return; }
-
-        // Legacy check: accepted_tokens (pre-RSVP-flow invitations)
-        if ((data.accepted_tokens as string[]).includes(viewerToken)) {
-          setState("responded");
-          return;
-        }
 
         setExpiresAt(expiry);
         setInvitation({
@@ -114,17 +106,12 @@ export default function InvitationView() {
   const handleRsvp = async (name: string, status: "accepted" | "declined") => {
     if (!id) return;
 
-    // Insert into rsvps table (silently fails if table not yet created)
-    try {
-      await supabase.from("rsvps").insert({ invitation_id: id, name, status });
-    } catch (_) { /* non-blocking */ }
-
-    // Trigger email notification via edge function (silently fails if not deployed)
+    // The edge function records the RSVP (deduped per device) AND emails the host
     try {
       await supabase.functions.invoke("notify-rsvp", {
-        body: { invitation_id: id, name, status },
+        body: { invitation_id: id, name, status, viewer_token: getViewerToken() },
       });
-    } catch (_) { /* non-blocking */ }
+    } catch (_) { /* non-blocking — don't trap the guest on an error */ }
 
     // Persist response so re-visits show the "already responded" page
     localStorage.setItem(`invity_responded_${id}`, status);

@@ -21,6 +21,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@paddle/paddle-js": "^1.6.4",
     "@supabase/supabase-js": "^2.105.3",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

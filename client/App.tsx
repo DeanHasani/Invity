@@ -12,6 +12,9 @@ import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import RefundPolicy from "./pages/RefundPolicy";
+import Pricing from "./pages/Pricing";
+import Guests from "./pages/Guests";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +29,9 @@ const App = () => (
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/refunds" element={<RefundPolicy />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/guests" element={<Guests />} />
           <Route path="/:id" element={<InvitationView />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

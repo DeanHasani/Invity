@@ -58,7 +58,19 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Free tier">
-            Free accounts are limited to two invitation links per day. Each link expires 8 hours after creation. This limit exists to ensure fair usage and may change in the future as paid tiers are introduced.
+            Free accounts are limited to two invitation links per day. Each free link expires 8 hours after creation. These limits exist to ensure fair usage.
+          </Block>
+
+          <Block title="Invity Pro">
+            Invity Pro is an optional paid subscription ($2.99/month or $20/year) that removes the daily creation limit (subject to a fair-use cap), extends link lifetime to 30 days, unlocks premium designs and effects, and adds guest lists with CSV export. Features and pricing may change; active subscribers will be notified of material changes before they take effect.
+          </Block>
+
+          <Block title="Billing">
+            Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders — Paddle handles payment processing, billing support, and applicable taxes. Subscriptions renew automatically (monthly or yearly) until cancelled. You can cancel anytime from the account menu; cancellation takes effect at the end of the current billing period and you keep Pro access until then.
+          </Block>
+
+          <Block title="Refunds">
+            First-time Pro purchases come with a 14-day money-back guarantee. See our Refund Policy at invity.cards/refunds for full details and how to request one.
           </Block>
 
           <Block title="Acceptable use">
@@ -70,7 +82,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Availability">
-            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary and expire after 8 hours — do not rely on them for permanent records.
+            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary — they expire after 8 hours (free) or 30 days (Pro). Do not rely on them for permanent records.
           </Block>
 
           <Block title="Limitation of liability">

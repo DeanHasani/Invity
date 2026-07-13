@@ -10,6 +10,12 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS });
@@ -19,22 +25,54 @@ Deno.serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: CORS });
   }
 
-  const { invitation_id, name, status } = await req.json();
+  const body = await req.json().catch(() => ({}));
+  const invitation_id = typeof body.invitation_id === "string" ? body.invitation_id : "";
+  const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+  const status = body.status === "accepted" || body.status === "declined" ? body.status : "";
+  const viewer_token =
+    typeof body.viewer_token === "string" ? body.viewer_token.slice(0, 80) : null;
 
   if (!invitation_id || !name || !status) {
-    return new Response("Missing fields", { status: 400, headers: CORS });
+    return json({ error: "missing_fields" }, 400);
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   const { data: invitation, error } = await supabase
     .from("invitations")
-    .select("title, user_email")
+    .select("id, title, user_email, expires_at")
     .eq("id", invitation_id)
     .single();
 
-  if (error || !invitation?.user_email) {
-    return new Response("Invitation not found", { status: 404, headers: CORS });
+  if (error || !invitation) {
+    return json({ error: "not_found" }, 404);
+  }
+
+  if (invitation.expires_at && new Date(invitation.expires_at).getTime() < Date.now()) {
+    return json({ error: "expired" }, 410);
+  }
+
+  // Record the RSVP. Older client bundles insert into rsvps directly and call
+  // this function without a viewer_token — skip the insert for those to avoid
+  // double rows during the rollout window.
+  if (viewer_token) {
+    const { error: insertError } = await supabase
+      .from("rsvps")
+      .insert({ invitation_id, name, status, viewer_token });
+
+    if (insertError) {
+      // 23505 = unique violation → this device already responded; don't re-email
+      if (insertError.code === "23505") {
+        return json({ ok: true, duplicate: true });
+      }
+      console.error("rsvp insert failed:", insertError);
+      return json({ error: "rsvp_failed" }, 500);
+    }
+  }
+
+  if (!invitation.user_email) {
+    // Legacy anonymous invitation — RSVP recorded, nobody to notify
+    return json({ ok: true });
   }
 
   const { title, user_email } = invitation;
@@ -72,10 +110,9 @@ Deno.serve(async (req) => {
 
   if (!res.ok) {
     console.error("Resend error:", await res.text());
-    return new Response("Email send failed", { status: 500, headers: CORS });
+    // RSVP row is already stored — don't fail the guest's action over email
+    return json({ ok: true, email_sent: false });
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
+  return json({ ok: true });
 });

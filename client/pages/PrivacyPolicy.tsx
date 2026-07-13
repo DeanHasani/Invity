@@ -57,11 +57,11 @@ export default function PrivacyPolicy() {
           </Block>
 
           <Block title="Third-party services">
-            Invity is built on Supabase (database and authentication) and uses Google OAuth for sign-in. Your sign-in is handled directly by Google — we never see your Google password. Data is stored on Supabase infrastructure. Please refer to their respective privacy policies for how they handle data.
+            Invity is built on Supabase (database and authentication) and uses Google OAuth for sign-in. Your sign-in is handled directly by Google — we never see your Google password. Data is stored on Supabase infrastructure. If you purchase Invity Pro, payment is processed by Paddle.com, our merchant of record — Paddle collects your payment details and billing information directly, and we never see your card number. Please refer to their respective privacy policies for how they handle data.
           </Block>
 
           <Block title="Data retention">
-            Invitation links expire automatically after 8 hours. Your account data (email, creation history) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database and signs you out.
+            Invitation links expire automatically — after 8 hours on the free tier, or 30 days for Pro subscribers. Your account data (email, creation history, and subscription status if you're a Pro subscriber) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database, cancels any active subscription, and signs you out.
           </Block>
 
           <Block title="Cookies & storage">

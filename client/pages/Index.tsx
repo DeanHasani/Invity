@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { CreateInvitationRequest, Invitation } from "@shared/api";
+import { CreateInvitationRequest, CreateInvitationResponse, Invitation } from "@shared/api";
 import { toast } from "sonner";
-import { nanoid } from "nanoid";
 import { supabase, signInWithGoogle, signOut } from "@/lib/supabase";
 import { getCreatorId } from "@/lib/identity";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
-import { Check, Copy, Link as LinkIcon } from "lucide-react";
+import { Check, Copy, Link as LinkIcon, Lock } from "lucide-react";
+import { PRO_DESIGN_IDS, PRO_EFFECT_IDS } from "@shared/premium";
+import { UpgradeModal } from "@/components/UpgradeModal";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -412,11 +414,24 @@ function TitleEffectPreview({
 // Account menu
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AccountMenu({ email }: { email: string }) {
+function AccountMenu({
+  email,
+  isPro,
+  periodEnd,
+  cancelScheduled,
+  onUpgrade,
+}: {
+  email: string;
+  isPro: boolean;
+  periodEnd: string | null;
+  cancelScheduled: boolean;
+  onUpgrade: () => void;
+}) {
   const [open, setOpen]           = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting]   = useState(false);
   const [hovered, setHovered]     = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const showSplash = open || hovered;
@@ -434,10 +449,28 @@ function AccountMenu({ email }: { email: string }) {
 
   const handleDeleteEverything = async () => {
     setDeleting(true);
-    try {
-      await supabase.functions.invoke("delete-account", { body: {} });
-    } catch (_) { /* edge fn handles deletion; sign out regardless */ }
+    const { error } = await supabase.functions.invoke("delete-account", { body: {} });
+    if (error) {
+      // Most likely the Paddle cancellation failed — deletion was aborted
+      // server-side, so don't sign out and pretend it worked.
+      setDeleting(false);
+      toast.error("Couldn't delete your account (subscription cancellation failed). Try again or contact us.");
+      return;
+    }
     await signOut();
+  };
+
+  const openPortal = async () => {
+    setPortalBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("paddle-portal", { body: {} });
+      if (error || !data?.url) throw error ?? new Error("no url");
+      window.open(data.url, "_blank", "noopener");
+    } catch {
+      toast.error("Couldn't open the billing portal. Try again.");
+    } finally {
+      setPortalBusy(false);
+    }
   };
 
   const fill = "rgba(255,255,255,0.85)";
@@ -492,16 +525,61 @@ function AccountMenu({ email }: { email: string }) {
           className="absolute top-full right-0 mt-2 w-56 z-50 flex flex-col"
           style={{ background: "#1a0800", border: "2px solid var(--brand-mid)" }}
         >
-          {/* Email */}
+          {/* Email + plan */}
           <div
-            className="px-4 py-3 text-[10px] uppercase tracking-widest truncate"
-            style={{ color: "rgba(255,255,255,0.3)", borderBottom: "1px solid var(--brand-dim)" }}
+            className="px-4 py-3 space-y-1.5"
+            style={{ borderBottom: "1px solid var(--brand-dim)" }}
           >
-            {email}
+            <div className="text-[10px] uppercase tracking-widest truncate" style={{ color: "rgba(255,255,255,0.3)" }}>
+              {email}
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5"
+                style={
+                  isPro
+                    ? { background: "var(--brand)", color: "#fff" }
+                    : { border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)" }
+                }
+              >
+                {isPro ? "⭐ PRO" : "FREE"}
+              </span>
+              {isPro && periodEnd && (
+                <span className="text-[9px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  {cancelScheduled ? "ends" : "renews"} {new Date(periodEnd).toLocaleDateString()}
+                </span>
+              )}
+            </div>
           </div>
 
           {!confirming ? (
             <>
+              <Link
+                to="/guests"
+                onClick={() => setOpen(false)}
+                className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full block"
+                style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.92)" }}
+              >
+                Guest Lists
+              </Link>
+              {isPro ? (
+                <button
+                  onClick={openPortal}
+                  disabled={portalBusy}
+                  className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full disabled:opacity-40"
+                  style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.92)" }}
+                >
+                  {portalBusy ? "OPENING..." : "Manage Subscription"}
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setOpen(false); onUpgrade(); }}
+                  className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
+                  style={{ fontFamily: LG_FONT, color: "var(--brand)" }}
+                >
+                  ⭐ Upgrade to Pro
+                </button>
+              )}
               <button
                 onClick={() => { signOut(); setOpen(false); }}
                 className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
@@ -520,7 +598,7 @@ function AccountMenu({ email }: { email: string }) {
           ) : (
             <div className="px-4 py-3 space-y-2">
               <p className="text-[10px] uppercase tracking-wide" style={{ color: "rgba(255,255,255,0.5)" }}>
-                This deletes all your invitations and signs you out. Are you sure?
+                This deletes all your invitations, cancels any Pro subscription, and signs you out. Are you sure?
               </p>
               <div className="flex gap-2">
                 <button
@@ -690,7 +768,10 @@ export default function Index() {
   const [step, setStep] = useState(1);
   const [phraseIndices, setPhraseIndices] = useState<Record<number, number>>({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
+  const [createdExpiresAt, setCreatedExpiresAt] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const { isPro, currentPeriodEnd, cancelScheduled } = useSubscription();
   const [theme, setTheme] = useState<AppTheme>(() =>
     (localStorage.getItem("invity_theme") as AppTheme) ?? "orange"
   );
@@ -761,6 +842,9 @@ export default function Index() {
 
   useEffect(() => { randomizePhrases(); }, []);
 
+  // Going Pro lifts the free-tier wall immediately
+  useEffect(() => { if (isPro) setRateLimited(false); }, [isPro]);
+
   // ── Draft hand-off from an in-app browser (?draft=…) ──────────────────────
   // When CREATE is pressed inside LinkedIn/Instagram etc., we reopen the page
   // in a real browser with the form data in the URL so nothing is lost.
@@ -812,71 +896,28 @@ export default function Index() {
   };
   const prevStep = () => animateStep(false);
 
-  // ── Mutation ───────────────────────────────────────────────────────────────
+  // ── Mutation — creation and all plan/limit checks now live server-side ──────
   const createMutation = useMutation({
     mutationFn: async (data: CreateInvitationRequest) => {
-      const creatorId = getCreatorId();
-      const since24h = new Date(Date.now() - 24 * 3_600_000).toISOString();
-      if (userEmail) {
-        const [{ count: logEmailCount }, { count: logDeviceCount }, { count: invCount }] = await Promise.all([
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since24h),
-          supabase.from("creation_log").select("id", { count: "exact", head: true }).eq("creator_id", creatorId).gte("created_at", since24h),
-          supabase.from("invitations").select("id", { count: "exact", head: true }).eq("user_email", userEmail).gte("created_at", since24h),
-        ]);
-        if ((logEmailCount ?? 0) >= 2 || (logDeviceCount ?? 0) >= 2 || (invCount ?? 0) >= 2)
-          throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
-      } else {
-        const { count } = await supabase
-          .from("invitations")
-          .select("id", { count: "exact", head: true })
-          .eq("creator_id", creatorId)
-          .gte("created_at", since24h);
-        if ((count ?? 0) >= 2) throw Object.assign(new Error("rate_limited"), { code: "rate_limited" });
+      const { data: res, error } = await supabase.functions.invoke("create-invitation", {
+        body: { ...data, creatorId: getCreatorId() },
+      });
+      if (error) {
+        let code = "";
+        try { code = (await (error as any).context?.json())?.error ?? ""; } catch { /* non-JSON error */ }
+        throw Object.assign(new Error(code || "create_failed"), { code });
       }
-
-      const id = nanoid(10);
-      const expiresAt = new Date(Date.now() + 8 * 3_600_000).toISOString();
-      const { data: row, error } = await supabase
-        .from("invitations")
-        .insert({
-          id,
-          title:      data.title,
-          message:    data.message,
-          design_id:  data.designId,
-          effect_id:  data.effectId,
-          font_id:    data.fontId    ?? null,
-          font_color: data.fontColor ?? null,
-          date:       data.date     || null,
-          location:   data.location || null,
-          creator_id: creatorId,
-          user_email: userEmail,
-          expires_at: expiresAt,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      if (userEmail) await supabase.from("creation_log").insert({ user_email: userEmail, creator_id: creatorId });
-      return {
-        invitation: {
-          id:        row.id,
-          title:     row.title,
-          message:   row.message,
-          designId:  row.design_id,
-          effectId:  row.effect_id,
-          fontId:    row.font_id    ?? undefined,
-          fontColor: row.font_color ?? undefined,
-          date:      row.date     ?? undefined,
-          location:  row.location ?? undefined,
-        } as Invitation,
-      };
+      return res as CreateInvitationResponse;
     },
     onSuccess: (data) => {
       setCreatedInvitation(data.invitation);
+      setCreatedExpiresAt(data.expiresAt);
       animateStep(true, 5);
       toast.success("Invitation created! 🎉");
     },
     onError: (err: Error & { code?: string }) => {
       if (err.code === "rate_limited") { setRateLimited(true); return; }
+      if (err.code === "premium_required") { setShowUpgrade(true); return; }
       toast.error("Something went wrong. Try again.");
     },
   });
@@ -935,6 +976,7 @@ export default function Index() {
       onComplete: () => {
         setStep(1);
         setCreatedInvitation(null);
+        setCreatedExpiresAt(null);
         randomizePhrases();
         setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
         gsap.fromTo(containerRef.current, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
@@ -946,7 +988,10 @@ export default function Index() {
   if (rateLimited) return (
     <div
       className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-6 select-none"
-      style={{ background: BRAND, color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
+      style={{
+        background: BRAND, color: "#fff", fontFamily: "'Montserrat', sans-serif",
+        "--brand": BRAND, "--brand-mid": B_MID, "--brand-dim": B_DIM,
+      } as React.CSSProperties}
     >
       <div className="text-7xl">⏰</div>
       <h1 className="text-5xl md:text-7xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
@@ -956,15 +1001,30 @@ export default function Index() {
         TWO LINKS A DAY
       </p>
       <p className="text-base opacity-70 max-w-sm">
-        You've hit your 2-link daily limit. Come back tomorrow and let's party again.
+        You've hit your 2-link daily limit. Come back tomorrow — or go Pro and never see this screen again.
       </p>
+      {!isPro && (
+        <button
+          onClick={() => setShowUpgrade(true)}
+          className="mt-2 bg-white text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
+          style={{ fontFamily: LG_FONT, color: BRAND }}
+        >
+          GO UNLIMITED — $2.99/MO
+        </button>
+      )}
       <button
         onClick={() => setRateLimited(false)}
-        className="mt-2 bg-white text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
-        style={{ fontFamily: LG_FONT, color: BRAND }}
+        className="text-base py-3 px-8 uppercase tracking-wider transition-colors hover:bg-white/10"
+        style={{ fontFamily: LG_FONT, border: "2px solid rgba(255,255,255,0.5)", color: "#fff" }}
       >
         Go Back
       </button>
+      {showUpgrade && (
+        <UpgradeModal
+          onClose={() => { setShowUpgrade(false); if (isPro) setRateLimited(false); }}
+          subtitle="Unlimited invitations, starting right now."
+        />
+      )}
     </div>
   );
 
@@ -1052,7 +1112,13 @@ export default function Index() {
         <div className="text-right pointer-events-auto space-y-2">
           {/* Sign in / Account — above phrase + dots */}
           {authState === "signed-in" ? (
-            <AccountMenu email={userEmail ?? ""} />
+            <AccountMenu
+              email={userEmail ?? ""}
+              isPro={isPro}
+              periodEnd={currentPeriodEnd}
+              cancelScheduled={cancelScheduled}
+              onUpgrade={() => setShowUpgrade(true)}
+            />
           ) : (
             <button
               onClick={() => setShowSignIn(true)}
@@ -1176,23 +1242,37 @@ export default function Index() {
                 PICK A<br />DESIGN.
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                {DESIGNS.map(d => (
-                  <button
-                    key={d.id}
-                    onClick={() => setFormData({ ...formData, designId: d.id as any })}
-                    style={{ ...(d.style ?? {}), ...(formData.designId === d.id ? { "--tw-ring-offset-color": BRAND } : {}) } as React.CSSProperties}
-                    className={cn(
-                      "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
-                      d.color,
-                      formData.designId === d.id
-                        ? "scale-[1.02] ring-4 ring-white ring-offset-2"
-                        : "opacity-65 hover:opacity-95"
-                    )}
-                  >
-                    <span className="text-base md:text-xl uppercase leading-tight" style={{ fontFamily: LG_FONT }}>{d.label}</span>
-                    {formData.designId === d.id && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
-                  </button>
-                ))}
+                {DESIGNS.map(d => {
+                  const locked = !isPro && PRO_DESIGN_IDS.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        if (locked) { setShowUpgrade(true); return; }
+                        setFormData({ ...formData, designId: d.id as any });
+                      }}
+                      style={{ ...(d.style ?? {}), ...(formData.designId === d.id ? { "--tw-ring-offset-color": BRAND } : {}) } as React.CSSProperties}
+                      className={cn(
+                        "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
+                        d.color,
+                        formData.designId === d.id
+                          ? "scale-[1.02] ring-4 ring-white ring-offset-2"
+                          : locked ? "opacity-45 hover:opacity-70" : "opacity-65 hover:opacity-95"
+                      )}
+                    >
+                      <span className="text-base md:text-xl uppercase leading-tight" style={{ fontFamily: LG_FONT }}>{d.label}</span>
+                      {formData.designId === d.id && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
+                      {locked && (
+                        <span
+                          className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest"
+                          style={{ background: "rgba(0,0,0,0.75)", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
+                        >
+                          <Lock className="w-2.5 h-2.5" /> PRO
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1277,21 +1357,33 @@ export default function Index() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {EFFECTS.map(e => {
                   const isSel = formData.effectId === e.id;
+                  const locked = !isPro && PRO_EFFECT_IDS.includes(e.id);
                   return (
                     <button
                       key={e.id}
                       onClick={() => {
+                        if (locked) { setShowUpgrade(true); return; }
                         setFormData({ ...formData, effectId: e.id as any });
                         setEffectPreviewKey(k => k + 1);
                       }}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
-                        isSel ? "bg-white border-white" : "border-white/30 opacity-65 hover:opacity-95"
+                        isSel
+                          ? "bg-white border-white"
+                          : locked ? "border-white/30 opacity-40 hover:opacity-65" : "border-white/30 opacity-65 hover:opacity-95"
                       )}
                       style={isSel ? { color: BRAND } : undefined}
                     >
                       <span className="text-2xl md:text-3xl uppercase" style={{ fontFamily: LG_FONT }}>{e.label}</span>
                       {isSel && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
+                      {locked && (
+                        <span
+                          className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest"
+                          style={{ background: "rgba(0,0,0,0.75)", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
+                        >
+                          <Lock className="w-2.5 h-2.5" /> PRO
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -1346,7 +1438,10 @@ export default function Index() {
                 return (
                   <div className="p-5 md:p-7 bg-white text-black space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest opacity-55">
-                      Your shareable link · expires in 8 h
+                      Your shareable link · expires in{" "}
+                      {createdExpiresAt && new Date(createdExpiresAt).getTime() - Date.now() > 24 * 3_600_000
+                        ? "30 days"
+                        : "8 h"}
                     </p>
                     <div
                       onClick={copyLink}
@@ -1471,6 +1566,14 @@ export default function Index() {
         )}
         <div className="flex items-center justify-center gap-3 py-2.5">
           <Link
+            to="/pricing"
+            className="text-[11px] uppercase tracking-widest"
+            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
+          >
+            Pricing
+          </Link>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
+          <Link
             to="/privacy"
             className="text-[11px] uppercase tracking-widest"
             style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
@@ -1484,6 +1587,14 @@ export default function Index() {
             style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
           >
             Terms
+          </Link>
+          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
+          <Link
+            to="/refunds"
+            className="text-[11px] uppercase tracking-widest"
+            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
+          >
+            Refunds
           </Link>
           <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
           <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Montserrat', sans-serif" }}>
@@ -1503,6 +1614,16 @@ export default function Index() {
       {/* Footer — desktop only, mobile uses the bottom nav bar */}
       <div className="hidden md:flex fixed bottom-4 left-0 right-0 z-20 items-center justify-center gap-5 px-4 pointer-events-none select-none">
         <Link
+          to="/pricing"
+          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
+          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+        >
+          Pricing
+        </Link>
+        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
+        <Link
           to="/privacy"
           className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
           style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
@@ -1520,6 +1641,16 @@ export default function Index() {
           onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
         >
           Terms
+        </Link>
+        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
+        <Link
+          to="/refunds"
+          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
+          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+        >
+          Refunds
         </Link>
         <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
         <span className="text-[13px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.75)", fontFamily: "'Montserrat', sans-serif" }}>
@@ -1541,6 +1672,9 @@ export default function Index() {
           url={`${window.location.origin}/?draft=${encodeURIComponent(JSON.stringify(formData))}`}
         />
       )}
+
+      {/* Pro upsell */}
+      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { paddleConfigured, paddleFetch } from "../_shared/paddle.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -8,6 +9,12 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -21,11 +28,34 @@ Deno.serve(async (req) => {
   const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
   if (error || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
+  // Cancel any active Paddle subscription BEFORE deleting anything — a deleted
+  // account must never keep getting charged.
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("paddle_subscription_id, status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (sub && sub.status !== "canceled") {
+    if (!paddleConfigured()) {
+      console.error("delete-account: subscription exists but Paddle is not configured");
+      return json({ error: "subscription_cancel_failed" }, 502);
+    }
+    const res = await paddleFetch(`/subscriptions/${sub.paddle_subscription_id}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ effective_from: "immediately" }),
+    });
+    // 404 = already gone on Paddle's side; anything else must abort the deletion
+    if (!res.ok && res.status !== 404) {
+      console.error("delete-account: paddle cancel failed:", res.status, await res.text());
+      return json({ error: "subscription_cancel_failed" }, 502);
+    }
+  }
+
   await supabase.from("invitations").delete().eq("user_email", user.email);
   await supabase.from("creation_log").delete().eq("user_email", user.email);
+  await supabase.from("subscriptions").delete().eq("user_id", user.id);
   await supabase.auth.admin.deleteUser(user.id);
 
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { ...CORS, "Content-Type": "application/json" },
-  });
+  return json({ ok: true });
 });

@@ -1,0 +1,173 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { nanoid } from "https://esm.sh/nanoid@5";
+import {
+  ALL_DESIGN_IDS, ALL_EFFECT_IDS, PRO_DESIGN_IDS, PRO_EFFECT_IDS,
+  FREE_DAILY_LIMIT, PRO_DAILY_ABUSE_CAP, FREE_EXPIRY_MS, PRO_EXPIRY_MS,
+  isProStatus,
+} from "../_shared/premium.ts";
+import { paddleConfigured, paddleFetch } from "../_shared/paddle.ts";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return json({ error: "unauthorized" }, 401);
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  const { data: { user }, error: authError } =
+    await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+  // Anonymous sessions carry valid JWTs — creation requires a real Google account
+  if (authError || !user || user.is_anonymous || !user.email) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  const userEmail = user.email;
+
+  let body: Record<string, unknown>;
+  try { body = await req.json(); } catch { return json({ error: "invalid_input" }, 400); }
+
+  const str = (v: unknown, max: number) =>
+    typeof v === "string" ? v.trim().slice(0, max) : "";
+
+  const title     = str(body.title, 100);
+  const message   = str(body.message, 1000);
+  const designId  = str(body.designId, 40);
+  const effectId  = str(body.effectId, 40);
+  const fontId    = str(body.fontId, 40) || null;
+  const fontColor = str(body.fontColor, 20) || null;
+  const date      = str(body.date, 60) || null;
+  const location  = str(body.location, 200) || null;
+  const creatorId = str(body.creatorId, 80) || null;
+
+  if (
+    !title || !message ||
+    !(ALL_DESIGN_IDS as readonly string[]).includes(designId) ||
+    !(ALL_EFFECT_IDS as readonly string[]).includes(effectId)
+  ) {
+    return json({ error: "invalid_input" }, 400);
+  }
+
+  // ── Resolve plan ────────────────────────────────────────────────────────────
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  let isPro = isProStatus(sub?.status);
+
+  // Self-heal: if the row claims Pro but the billing period ended >3 days ago,
+  // a terminal webhook may have been missed — re-check with Paddle directly.
+  if (
+    isPro && paddleConfigured() && sub?.current_period_end &&
+    new Date(sub.current_period_end).getTime() < Date.now() - 3 * 24 * 3_600_000
+  ) {
+    try {
+      const res = await paddleFetch(`/subscriptions/${sub.paddle_subscription_id}`);
+      if (res.ok) {
+        const { data } = await res.json();
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: data.status,
+            current_period_end: data.current_billing_period?.ends_at ?? null,
+            scheduled_change: data.scheduled_change ?? null,
+          })
+          .eq("user_id", user.id);
+        isPro = isProStatus(data.status);
+      }
+    } catch (e) {
+      console.error("paddle self-heal failed:", e);
+      // fail open — the stored status stands
+    }
+  }
+
+  // ── Premium gating ──────────────────────────────────────────────────────────
+  if (!isPro && (PRO_DESIGN_IDS.includes(designId) || PRO_EFFECT_IDS.includes(effectId))) {
+    return json({ error: "premium_required" }, 403);
+  }
+
+  // ── Rate limit (same three counts the client used to run, now trusted) ──────
+  const since24h = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  const limit = isPro ? PRO_DAILY_ABUSE_CAP : FREE_DAILY_LIMIT;
+
+  const counts = await Promise.all([
+    supabase.from("creation_log").select("id", { count: "exact", head: true })
+      .eq("user_email", userEmail).gte("created_at", since24h),
+    supabase.from("invitations").select("id", { count: "exact", head: true })
+      .eq("user_email", userEmail).gte("created_at", since24h),
+    creatorId
+      ? supabase.from("creation_log").select("id", { count: "exact", head: true })
+          .eq("creator_id", creatorId).gte("created_at", since24h)
+      : Promise.resolve({ count: 0 }),
+  ]);
+  // Device count only limits free users — a Pro user shares no cap with other
+  // accounts on the same device beyond the abuse cap on their own email.
+  const emailCount = Math.max(counts[0].count ?? 0, counts[1].count ?? 0);
+  const deviceCount = counts[2].count ?? 0;
+  if (emailCount >= limit || (!isPro && deviceCount >= FREE_DAILY_LIMIT)) {
+    return json({ error: "rate_limited" }, 429);
+  }
+
+  // ── Create ──────────────────────────────────────────────────────────────────
+  const id = nanoid(10);
+  const expiresAt = new Date(Date.now() + (isPro ? PRO_EXPIRY_MS : FREE_EXPIRY_MS)).toISOString();
+
+  const { data: row, error: insertError } = await supabase
+    .from("invitations")
+    .insert({
+      id,
+      title,
+      message,
+      design_id:  designId,
+      effect_id:  effectId,
+      font_id:    fontId,
+      font_color: fontColor,
+      date,
+      location,
+      creator_id: creatorId,
+      user_email: userEmail,
+      expires_at: expiresAt,
+    })
+    .select()
+    .single();
+
+  if (insertError || !row) {
+    console.error("insert failed:", insertError);
+    return json({ error: "create_failed" }, 500);
+  }
+
+  await supabase.from("creation_log").insert({ user_email: userEmail, creator_id: creatorId });
+
+  return json({
+    invitation: {
+      id:        row.id,
+      title:     row.title,
+      message:   row.message,
+      designId:  row.design_id,
+      effectId:  row.effect_id,
+      fontId:    row.font_id    ?? undefined,
+      fontColor: row.font_color ?? undefined,
+      date:      row.date       ?? undefined,
+      location:  row.location   ?? undefined,
+    },
+    expiresAt,
+    plan: isPro ? "pro" : "free",
+  });
+});

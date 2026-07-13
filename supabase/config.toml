@@ -1,0 +1,6 @@
+project_id = "blwvswtvktbreahahjls"
+
+# Paddle calls this endpoint directly — it authenticates via the
+# Paddle-Signature header, not a Supabase JWT.
+[functions.paddle-webhook]
+verify_jwt = false
