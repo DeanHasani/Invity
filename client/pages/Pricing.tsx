@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { FloatingPhrases } from "@/components/FloatingPhrases";
-import { UpgradeModal } from "@/components/UpgradeModal";
-import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/lib/supabase";
+import { useSubscription, awaitProActivation } from "@/hooks/useSubscription";
+import { supabase, signInWithGoogle } from "@/lib/supabase";
+import { openProCheckout, type BillingCycle } from "@/lib/paddle";
 import { PRICE_MONTHLY_LABEL, PRICE_YEARLY_LABEL } from "@shared/premium";
 
 const LG_FONT = "'Luckiest Guy', cursive";
@@ -30,9 +30,52 @@ export default function Pricing() {
     const t = localStorage.getItem("invity_theme") ?? "orange";
     return THEME_COLORS[t] ?? THEME_COLORS.orange;
   });
-  const { isPro, currentPeriodEnd, cancelScheduled } = useSubscription();
-  const [showUpgrade, setShowUpgrade] = useState(false);
+  const { user, isPro, currentPeriodEnd, cancelScheduled, refetch } = useSubscription();
+  const [cycle, setCycle] = useState<BillingCycle>("year");
+  const [buyBusy, setBuyBusy] = useState(false);
+  const [activating, setActivating] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
+  const pendingBuyRef = useRef(false);
+
+  const handleBuy = async (buyUser: { id: string; email: string }) => {
+    setBuyBusy(true);
+    try {
+      await openProCheckout(cycle, buyUser, async () => {
+        setActivating(true);
+        const ok = await awaitProActivation(refetch as any);
+        if (ok) toast.success("You're Pro! 🎉 Party without limits.");
+        else toast("Payment received — Pro unlocks within a minute or two.");
+        setActivating(false);
+      });
+    } catch {
+      toast.error("Couldn't load checkout — an ad blocker may be interfering.");
+    } finally {
+      setBuyBusy(false);
+    }
+  };
+
+  // Signed-out visitors: GO PRO first runs the Google popup, then continues
+  // into checkout automatically once the session lands.
+  useEffect(() => {
+    if (user && pendingBuyRef.current) {
+      pendingBuyRef.current = false;
+      handleBuy(user);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const handleGoPro = async () => {
+    if (activating || buyBusy) return;
+    if (!user) {
+      pendingBuyRef.current = true;
+      setBuyBusy(true);
+      try { await signInWithGoogle(); }
+      catch { pendingBuyRef.current = false; toast.error("Sign-in failed. Try again."); }
+      finally { setBuyBusy(false); }
+      return;
+    }
+    handleBuy(user);
+  };
 
   const openPortal = async () => {
     setPortalBusy(true);
@@ -85,24 +128,6 @@ export default function Pricing() {
             </p>
           </div>
 
-          {/* Exact prices — must match the Paddle checkout amounts exactly */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="border-2 border-white/40 bg-black/20 p-6 space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-widest opacity-60">Monthly</p>
-              <p className="text-4xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
-                {PRICE_MONTHLY_LABEL}<span className="text-lg opacity-70"> / month</span>
-              </p>
-              <p className="text-xs opacity-60 pt-1">Billed monthly. Auto-renews until cancelled.</p>
-            </div>
-            <div className="border-2 border-white bg-white/10 p-6 space-y-1">
-              <p className="text-[11px] font-bold uppercase tracking-widest opacity-60">Yearly · Save 44%</p>
-              <p className="text-4xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
-                {PRICE_YEARLY_LABEL}<span className="text-lg opacity-70"> / year</span>
-              </p>
-              <p className="text-xs opacity-60 pt-1">Billed annually. Auto-renews until cancelled.</p>
-            </div>
-          </div>
-
           {/* Comparison */}
           <div className="border-2 border-white/40 bg-black/20 overflow-x-auto">
             <table className="w-full text-sm">
@@ -127,7 +152,6 @@ export default function Pricing() {
             </table>
           </div>
 
-          {/* CTA */}
           {isPro ? (
             <div className="space-y-3">
               <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT }}>
@@ -149,13 +173,46 @@ export default function Pricing() {
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowUpgrade(true)}
-              className="w-full bg-white text-2xl py-5 uppercase tracking-wider hover:bg-white/90 transition-colors"
-              style={{ fontFamily: LG_FONT, color: theme.hex }}
-            >
-              GO PRO — {PRICE_MONTHLY_LABEL}/MO
-            </button>
+            <>
+              {/* Plan picker — exact prices must match the Paddle checkout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {([
+                  { id: "month" as const, tag: "Monthly", price: PRICE_MONTHLY_LABEL, per: "/ month", note: "Billed monthly. Auto-renews until cancelled." },
+                  { id: "year"  as const, tag: "Yearly · Save 44%", price: PRICE_YEARLY_LABEL, per: "/ year", note: "Billed annually. Auto-renews until cancelled." },
+                ]).map(p => {
+                  const selected = cycle === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setCycle(p.id)}
+                      className={
+                        "text-left p-6 space-y-1 border-2 transition-all duration-200 " +
+                        (selected
+                          ? "border-white bg-white/10 scale-[1.01]"
+                          : "border-white/40 bg-black/20 opacity-70 hover:opacity-95")
+                      }
+                    >
+                      <p className="text-[11px] font-bold uppercase tracking-widest opacity-60">
+                        {p.tag} {selected && "✓"}
+                      </p>
+                      <p className="text-4xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
+                        {p.price}<span className="text-lg opacity-70"> {p.per}</span>
+                      </p>
+                      <p className="text-xs opacity-60 pt-1">{p.note}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleGoPro}
+                disabled={buyBusy || activating}
+                className="w-full bg-white text-2xl py-5 uppercase tracking-wider hover:bg-white/90 transition-colors disabled:opacity-60"
+                style={{ fontFamily: LG_FONT, color: theme.hex }}
+              >
+                {activating ? "ACTIVATING..." : buyBusy ? "OPENING..." : "GO PRO"}
+              </button>
+            </>
           )}
 
           <p className="text-xs opacity-50">
@@ -166,8 +223,6 @@ export default function Pricing() {
           </p>
         </div>
       </div>
-
-      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} />}
     </div>
   );
 }
