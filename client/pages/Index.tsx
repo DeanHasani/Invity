@@ -845,6 +845,15 @@ export default function Index() {
   // Going Pro lifts the free-tier wall immediately
   useEffect(() => { if (isPro) setRateLimited(false); }, [isPro]);
 
+  // /?upgrade=1 — entry point from the static /pricing page's GO PRO button
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgrade")) {
+      setShowUpgrade(true);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   // ── Draft hand-off from an in-app browser (?draft=…) ──────────────────────
   // When CREATE is pressed inside LinkedIn/Instagram etc., we reopen the page
   // in a real browser with the form data in the URL so nothing is lost.

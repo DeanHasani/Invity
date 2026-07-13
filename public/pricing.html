@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invity Pro — Pricing | Invity</title>
+  <meta name="description" content="Invity Pro pricing: $2.99/month or $20/year. Unlimited invitations, 30-day links, premium designs, guest lists with CSV export." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #F05A28; color: #fff; font-family: 'Montserrat', sans-serif; min-height: 100vh; }
+    .wrap { max-width: 42rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .back { font-family: 'Luckiest Guy', cursive; font-size: 22px; text-transform: uppercase; letter-spacing: 0.1em; color: #fff; text-decoration: none; opacity: 0.85; }
+    .back:hover { opacity: 1; }
+    h1 { font-family: 'Luckiest Guy', cursive; font-size: clamp(2.5rem, 8vw, 3.75rem); text-transform: uppercase; line-height: 1; margin: 2rem 0 0.5rem; }
+    .sub { opacity: 0.85; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; background: rgba(0,0,0,0.2); border: 2px solid rgba(255,255,255,0.4); font-size: 0.875rem; margin-bottom: 2rem; }
+    th { font-family: 'Luckiest Guy', cursive; font-size: 1rem; text-transform: uppercase; padding: 1rem; border-bottom: 2px solid rgba(255,255,255,0.4); }
+    th:first-child { text-align: left; }
+    td { padding: 1rem; border-bottom: 1px solid rgba(255,255,255,0.15); text-align: center; }
+    td:first-child { text-align: left; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.85; }
+    tr:last-child td { border-bottom: none; }
+    td.pro { font-weight: 700; }
+    td.free { opacity: 0.7; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    @media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+    .card { border: 2px solid rgba(255,255,255,0.4); background: rgba(0,0,0,0.2); padding: 1.5rem; }
+    .card.hl { border-color: #fff; background: rgba(255,255,255,0.1); }
+    .card .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.6; }
+    .card .price { font-family: 'Luckiest Guy', cursive; font-size: 2.25rem; text-transform: uppercase; line-height: 1; margin: 0.35rem 0; }
+    .card .price span { font-size: 1.1rem; opacity: 0.7; }
+    .card .note { font-size: 0.75rem; opacity: 0.6; }
+    .cta { display: block; width: 100%; background: #fff; color: #F05A28; font-family: 'Luckiest Guy', cursive; font-size: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: center; text-decoration: none; padding: 1.25rem; margin-bottom: 1.5rem; }
+    .cta:hover { background: rgba(255,255,255,0.92); }
+    .fine { font-size: 0.75rem; opacity: 0.6; line-height: 1.6; }
+    .fine a { color: #fff; }
+    footer { margin-top: 3rem; font-size: 0.8rem; opacity: 0.7; }
+    footer a { color: #fff; margin-right: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="/">Back</a>
+    <h1>Invity Pro</h1>
+    <p class="sub">Invity is free forever — two links a day, party on. Invity Pro removes every limit.</p>
+
+    <table>
+      <thead>
+        <tr><th></th><th>Free</th><th>Invity Pro ⭐</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Invitations per day</td><td class="free">2</td><td class="pro">Unlimited</td></tr>
+        <tr><td>Link lifetime</td><td class="free">8 hours</td><td class="pro">30 days</td></tr>
+        <tr><td>Designs</td><td class="free">8 core</td><td class="pro">All 12</td></tr>
+        <tr><td>Title effects</td><td class="free">4 core</td><td class="pro">All 7</td></tr>
+        <tr><td>RSVP email alerts</td><td class="free">✔</td><td class="pro">✔</td></tr>
+        <tr><td>Guest lists + CSV export</td><td class="free">—</td><td class="pro">✔</td></tr>
+      </tbody>
+    </table>
+
+    <div class="cards">
+      <div class="card">
+        <p class="tag">Monthly</p>
+        <p class="price">$2.99 <span>/ month</span></p>
+        <p class="note">Billed monthly. Auto-renews until cancelled.</p>
+      </div>
+      <div class="card hl">
+        <p class="tag">Yearly · Save 44%</p>
+        <p class="price">$20 <span>/ year</span></p>
+        <p class="note">Billed annually. Auto-renews until cancelled.</p>
+      </div>
+    </div>
+
+    <a class="cta" href="/?upgrade=1">Go Pro</a>
+
+    <p class="fine">
+      Prices in USD. Taxes may apply and will be calculated at checkout. Payments are processed
+      securely by Paddle.com, our merchant of record. Subscriptions auto-renew until cancelled —
+      cancel anytime. <a href="/refunds">14-day money-back guarantee</a>.
+    </p>
+
+    <footer>
+      <a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a>
+      © 2026 Invity
+    </footer>
+  </div>
+</body>
+</html>
