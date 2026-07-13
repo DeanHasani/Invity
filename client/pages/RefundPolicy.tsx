@@ -62,7 +62,7 @@ export default function RefundPolicy() {
           </Block>
 
           <Block title="How to request a refund">
-            Email us at hasanidean97@gmail.com from the address you used at checkout, or use the
+            Email us at cardsinvity@gmail.com from the address you used at checkout, or use the
             "Need help?" link in your Paddle receipt email. Refunds are processed by Paddle back
             to your original payment method, typically within 5–10 business days.
           </Block>
@@ -76,7 +76,7 @@ export default function RefundPolicy() {
           </Block>
 
           <Block title="Contact">
-            Questions about billing or refunds? Reach us at hasanidean97@gmail.com.
+            Questions about billing or refunds? Reach us at cardsinvity@gmail.com.
           </Block>
         </div>
       </div>

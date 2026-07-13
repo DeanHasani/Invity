@@ -69,7 +69,7 @@ export default function PrivacyPolicy() {
           </Block>
 
           <Block title="Contact">
-            For any privacy-related questions, contact me at hasanidean97@gmail.com.
+            For any privacy-related questions, contact us at cardsinvity@gmail.com.
           </Block>
         </div>
       </div>

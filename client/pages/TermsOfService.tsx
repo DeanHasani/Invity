@@ -94,7 +94,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Contact">
-            Questions about these terms? Reach us at support@invity.cards.
+            Questions about these terms? Reach us at cardsinvity@gmail.com.
           </Block>
         </div>
       </div>
