@@ -186,7 +186,8 @@ export function UpgradeModal({
             )}
 
             <p className="text-[10px] opacity-30 text-white">
-              Secure checkout by Paddle. Cancel anytime. 14-day money-back guarantee.
+              Prices in USD — taxes may apply and are calculated at checkout. Secure checkout by
+              Paddle. Auto-renews until cancelled. Cancel anytime. 14-day money-back guarantee.
             </p>
           </>
         )}

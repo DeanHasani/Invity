@@ -78,12 +78,29 @@ export default function Pricing() {
               className="text-4xl md:text-6xl uppercase tracking-tight leading-none"
               style={{ fontFamily: LG_FONT }}
             >
-              Go Pro
+              Invity Pro
             </h1>
             <p className="text-base opacity-80">
-              Invity is free forever — two links a day, party on. Pro removes every limit
-              for {PRICE_MONTHLY_LABEL}/month or {PRICE_YEARLY_LABEL}/year.
+              Invity is free forever — two links a day, party on. Invity Pro removes every limit.
             </p>
+          </div>
+
+          {/* Exact prices — must match the Paddle checkout amounts exactly */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border-2 border-white/40 bg-black/20 p-6 space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-widest opacity-60">Monthly</p>
+              <p className="text-4xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
+                {PRICE_MONTHLY_LABEL}<span className="text-lg opacity-70"> / month</span>
+              </p>
+              <p className="text-xs opacity-60 pt-1">Billed monthly. Auto-renews until cancelled.</p>
+            </div>
+            <div className="border-2 border-white bg-white/10 p-6 space-y-1">
+              <p className="text-[11px] font-bold uppercase tracking-widest opacity-60">Yearly · Save 44%</p>
+              <p className="text-4xl uppercase leading-none" style={{ fontFamily: LG_FONT }}>
+                {PRICE_YEARLY_LABEL}<span className="text-lg opacity-70"> / year</span>
+              </p>
+              <p className="text-xs opacity-60 pt-1">Billed annually. Auto-renews until cancelled.</p>
+            </div>
           </div>
 
           {/* Comparison */}
@@ -94,7 +111,7 @@ export default function Pricing() {
                   <th className="text-left p-4" />
                   <th className="p-4 text-base uppercase" style={{ fontFamily: LG_FONT }}>Free</th>
                   <th className="p-4 text-base uppercase" style={{ fontFamily: LG_FONT }}>
-                    Pro ⭐
+                    Invity Pro ⭐
                   </th>
                 </tr>
               </thead>
@@ -142,7 +159,9 @@ export default function Pricing() {
           )}
 
           <p className="text-xs opacity-50">
-            Payments are processed securely by Paddle.com, our merchant of record. Cancel anytime —{" "}
+            Prices in USD. Taxes may apply and will be calculated at checkout. Payments are
+            processed securely by Paddle.com, our merchant of record. Subscriptions auto-renew
+            until cancelled — cancel anytime.{" "}
             <Link to="/refunds" className="underline underline-offset-2">14-day money-back guarantee</Link>.
           </p>
         </div>
