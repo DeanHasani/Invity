@@ -1,4 +1,9 @@
 {
-  "cleanUrls": true,
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/pricing", "destination": "/pricing.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/refunds", "destination": "/refunds.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
