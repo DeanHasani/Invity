@@ -4,6 +4,11 @@
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/refunds", "destination": "/refunds.html" },
+    { "source": "/birthday-invitations", "destination": "/birthday-invitations.html" },
+    { "source": "/wedding-invitations", "destination": "/wedding-invitations.html" },
+    { "source": "/baby-shower-invitations", "destination": "/baby-shower-invitations.html" },
+    { "source": "/graduation-invitations", "destination": "/graduation-invitations.html" },
+    { "source": "/rsvp-link", "destination": "/rsvp-link.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

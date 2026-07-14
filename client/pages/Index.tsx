@@ -7,7 +7,7 @@ import { getCreatorId } from "@/lib/identity";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
 import { Check, Copy, Link as LinkIcon, Lock } from "lucide-react";
-import { PRO_DESIGN_IDS, PRO_EFFECT_IDS } from "@shared/premium";
+import { PRO_DESIGN_IDS, PRO_EFFECT_IDS, ALL_DESIGN_IDS } from "@shared/premium";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
@@ -846,10 +846,17 @@ export default function Index() {
   useEffect(() => { if (isPro) setRateLimited(false); }, [isPro]);
 
   // /?upgrade=1 — entry point from the static /pricing page's GO PRO button
+  // /?design=<id> — entry point from occasion landing pages (preselects a design)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const design = params.get("design");
+    if (design && (ALL_DESIGN_IDS as readonly string[]).includes(design)) {
+      setFormData(f => ({ ...f, designId: design as any }));
+    }
     if (params.get("upgrade")) {
       setShowUpgrade(true);
+    }
+    if (design || params.get("upgrade")) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
