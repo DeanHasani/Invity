@@ -1119,33 +1119,24 @@ export default function Index() {
           </div>
         </div>
         <div className="text-right pointer-events-auto space-y-2">
-          {/* Pricing + Sign in / Account — above phrase + dots */}
-          <div className="flex items-center justify-end gap-4">
-            <Link
-              to="/pricing"
-              className="text-sm md:text-base uppercase tracking-widest font-bold opacity-60 hover:opacity-100 transition-opacity"
+          {/* Sign in / Account — above phrase + dots */}
+          {authState === "signed-in" ? (
+            <AccountMenu
+              email={userEmail ?? ""}
+              isPro={isPro}
+              periodEnd={currentPeriodEnd}
+              cancelScheduled={cancelScheduled}
+              onUpgrade={() => setShowUpgrade(true)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowSignIn(true)}
+              className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity"
               style={{ fontFamily: LG_FONT }}
             >
-              Pricing
-            </Link>
-            {authState === "signed-in" ? (
-              <AccountMenu
-                email={userEmail ?? ""}
-                isPro={isPro}
-                periodEnd={currentPeriodEnd}
-                cancelScheduled={cancelScheduled}
-                onUpgrade={() => setShowUpgrade(true)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowSignIn(true)}
-                className="text-sm md:text-base uppercase tracking-widest font-bold opacity-80 hover:opacity-100 transition-opacity"
-                style={{ fontFamily: LG_FONT }}
-              >
-                Sign In
-              </button>
-            )}
-          </div>
+              Sign In
+            </button>
+          )}
           {/* Phrase + step dots — unchanged */}
           <p className="font-bold uppercase text-[11px] md:text-sm tracking-widest opacity-90">
             {STEP_PHRASES[step]?.[phraseIndices[step]] ?? ""}
