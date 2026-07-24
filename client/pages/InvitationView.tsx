@@ -77,11 +77,9 @@ export default function InvitationView() {
     }
 
     supabase
-      .from("invitation_public")
-      .select("id, title, message, design_id, effect_id, font_id, font_color, date, location, expires_at")
-      .eq("id", id)
-      .single()
-      .then(({ data, error }) => {
+      .rpc("get_invitation_public", { p_id: id })
+      .then(({ data: rows, error }) => {
+        const data = rows?.[0];
         if (error || !data) { setState("not-found"); return; }
 
         const expiry = new Date(data.expires_at as string).getTime();
