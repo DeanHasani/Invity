@@ -1,5 +1,5 @@
 /** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Luckiest+Guy&family=Fontdiner+Swanky&family=Vast+Shadow&family=Black+Ops+One&family=Lobster&family=Basic&family=Indie+Flower&family=Rubik+Glitch&family=Spicy+Rice&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Luckiest+Guy&family=Fontdiner+Swanky&family=Vast+Shadow&family=Black+Ops+One&family=Lobster&family=Basic&family=Indie+Flower&family=Rubik+Glitch&family=Spicy+Rice&family=Cormorant+Garamond:wght@500;600&family=Alex+Brush&family=Cinzel:wght@600&family=Quicksand:wght@500;700&family=Baloo+2:wght@700&family=Oswald:wght@500;700&display=swap");
 
 @keyframes canvasFadeIn { from { opacity:0 } to { opacity:1 } }
 

@@ -35,6 +35,10 @@ const THEME_BG: Record<string, string> = {
   hacked:     "bg-[#010f04] text-[#00ff55]",
   birthday:   "bg-gradient-to-br from-[#38bdf8] to-[#f472b6] text-[#FFD700]",
   space:      "bg-[#03040e] text-[#e8e4f8]",
+  wedding:      "bg-[#F1ECE1] text-[#3B3229]",
+  anniversary:  "bg-[#3C1420] text-[#F3E4C8]",
+  genderreveal: "bg-[#F7F3EC] text-[#3A332B]",
+  babyshower:   "bg-[#EFEAE2] text-[#3E362E]",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1252,6 +1256,183 @@ function SpaceCanvas() {
   return <div ref={containerRef} className="absolute inset-0 pointer-events-none" />;
 }
 
+function WeddingCanvas() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const items: HTMLDivElement[] = [];
+    for (let i = 0; i < 16; i++) {
+      const p = document.createElement("div");
+      const size = 7 + Math.random() * 6;
+      const dx = (Math.random() - 0.5) * 70;
+      p.style.cssText = [
+        `position:absolute`,
+        `width:${size}px`,
+        `height:${size * 1.35}px`,
+        `background:#E3AFAE`,
+        `border-radius:0 100% 0 100%`,
+        `left:${Math.random() * 100}%`,
+        `top:-6%`,
+        `opacity:${0.55 + Math.random() * 0.3}`,
+        `pointer-events:none`,
+      ].join(";");
+      el.appendChild(p); items.push(p);
+      gsap.to(p, {
+        y: window.innerHeight + 60, x: dx, rotation: 160 + Math.random() * 220,
+        duration: 9 + Math.random() * 7, delay: Math.random() * 10, repeat: -1, ease: "none",
+      });
+    }
+    return () => items.forEach(p => p.remove());
+  }, []);
+
+  const Flower = ({ rose }: { rose: boolean }) => (
+    <div className="relative" style={{ width: 38, height: 38 }}>
+      {[0, 60, 120, 180, 240, 300].map(deg => (
+        <div
+          key={deg}
+          className="absolute"
+          style={{
+            width: 16, height: 9, borderRadius: "50%",
+            background: rose ? "#C08552" : "#FBF7EE",
+            top: 14.5, left: 11,
+            transform: `rotate(${deg}deg) translateX(8px)`,
+            opacity: rose ? 0.88 : 0.94,
+          }}
+        />
+      ))}
+      <div className="absolute rounded-full" style={{ width: 7, height: 7, top: 15.5, left: 15.5, background: rose ? "#92A378" : "#C08552" }} />
+    </div>
+  );
+
+  return (
+    <>
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
+      <video
+        src="/wedding/wedding-loop.webm"
+        autoPlay loop muted playsInline
+        className="absolute left-1/2 top-1/2 pointer-events-none"
+        style={{ width: "82%", transform: "translate(-50%,-50%)", opacity: 0.26, objectFit: "contain" }}
+        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
+      />
+      <div className="absolute pointer-events-none flex gap-0.5" style={{ top: -4, left: -4 }}>
+        <Flower rose /><Flower rose={false} />
+      </div>
+      <div className="absolute pointer-events-none flex gap-0.5" style={{ bottom: -4, right: -4, transform: "rotate(180deg)" }}>
+        <Flower rose={false} /><Flower rose />
+      </div>
+    </>
+  );
+}
+
+function AnniversaryCanvas() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const items: HTMLDivElement[] = [];
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement("div");
+      const size = 14 + Math.random() * 34;
+      p.style.cssText = [
+        `position:absolute`,
+        `width:${size}px`,
+        `height:${size}px`,
+        `border-radius:50%`,
+        `background:radial-gradient(circle,#E8B570,transparent 70%)`,
+        `filter:blur(1.5px)`,
+        `left:${Math.random() * 100}%`,
+        `bottom:-8%`,
+        `opacity:0`,
+        `pointer-events:none`,
+      ].join(";");
+      el.appendChild(p); items.push(p);
+      const dur = 5 + Math.random() * 4;
+      gsap.timeline({ repeat: -1, delay: Math.random() * dur })
+        .to(p, { opacity: 0.85, y: -window.innerHeight * 0.18, duration: dur * 0.18, ease: "power1.out" })
+        .to(p, { opacity: 0, y: -window.innerHeight * 1.05, duration: dur * 0.82, ease: "power1.in" });
+    }
+    return () => items.forEach(p => p.remove());
+  }, []);
+  return (
+    <>
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ boxShadow: "inset 0 0 140px rgba(198,151,73,0.28)" }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vmin] h-[70vmin] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(232,181,112,0.14),transparent 70%)" }} />
+    </>
+  );
+}
+
+function GenderRevealCanvas() {
+  const ref = useRef<HTMLDivElement>(null);
+  const pinkRef = useRef<HTMLDivElement>(null);
+  const blueRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    if (pinkRef.current) gsap.to(pinkRef.current, { opacity: 0.15, duration: 4.5, repeat: -1, yoyo: true, ease: "sine.inOut" });
+    if (blueRef.current) gsap.to(blueRef.current, { opacity: 0.15, duration: 4.5, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 2.25 });
+
+    const items: HTMLDivElement[] = [];
+    const COLORS = ["#C9963E", "#F0A8BE", "#9DC2E8"];
+    for (let i = 0; i < 20; i++) {
+      const c = document.createElement("div");
+      const color = COLORS[i % COLORS.length];
+      c.style.cssText = [
+        `position:absolute`,
+        `width:6px`,
+        `height:10px`,
+        `background:${color}`,
+        `left:${Math.random() * 100}%`,
+        `top:${20 + Math.random() * 40}%`,
+        `opacity:0`,
+        `pointer-events:none`,
+      ].join(";");
+      el.appendChild(c); items.push(c);
+      const dx = (Math.random() - 0.5) * 90;
+      const dy = -(60 + Math.random() * 90);
+      gsap.timeline({ repeat: -1, delay: Math.random() * 5, repeatDelay: 3 + Math.random() * 2 })
+        .set(c, { x: 0, y: 0, opacity: 0, rotation: 0, scale: 0 })
+        .to(c, { opacity: 1, scale: 1, rotation: 20, duration: 0.15 })
+        .to(c, { x: dx, y: dy, rotation: 300, scale: 0.7, opacity: 0, duration: 1.6, ease: "power1.out" });
+    }
+    return () => items.forEach(c => c.remove());
+  }, []);
+  return (
+    <>
+      <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
+      <div ref={pinkRef} className="absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.95, background: "radial-gradient(circle at 30% 25%,#F0A8BE,transparent 70%)" }} />
+      <div ref={blueRef} className="absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.15, background: "radial-gradient(circle at 72% 68%,#9DC2E8,transparent 70%)" }} />
+    </>
+  );
+}
+
+function BabyShowerCanvas() {
+  return (
+    <>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "linear-gradient(135deg,#EFEAE2 0%,#EFC9D2 38%,#C9BFE0 68%,#BEE0CE 100%)" }}
+      />
+      <video
+        src="/babyshower/wavingbear.webm"
+        autoPlay loop muted playsInline
+        className="absolute pointer-events-none"
+        style={{ width: "34%", maxWidth: 220, left: "18%", bottom: "6%", opacity: 0.55, objectFit: "contain" }}
+        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
+      />
+      <video
+        src="/babyshower/train.webm"
+        autoPlay loop muted playsInline
+        className="absolute pointer-events-none babyshower-train"
+        style={{ width: "26%", maxWidth: 190, top: "34%", left: "-32%", opacity: 0.5, objectFit: "contain" }}
+        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
+      />
+    </>
+  );
+}
+
 // Maps a single effectId to the underlying animation + text-effect primitives
 const EFFECT_MAP: Record<string, { animationId: string; textEffectId: string }> = {
   static:    { animationId: "slide",    textEffectId: "none"    },
@@ -1261,6 +1442,9 @@ const EFFECT_MAP: Record<string, { animationId: string; textEffectId: string }> 
   decrypted: { animationId: "slide",    textEffectId: "decrypt" },
   assemble:  { animationId: "assemble", textEffectId: "none"    },
   bouncing:  { animationId: "pop",      textEffectId: "bounce"  },
+  shimmer:   { animationId: "slide",     textEffectId: "shimmer" },
+  reveal:    { animationId: "reveal",    textEffectId: "none"    },
+  blossom:   { animationId: "bloomopen", textEffectId: "blossom" },
 };
 
 export const CANVAS_MAP: Record<string, React.FC> = {
@@ -1276,6 +1460,10 @@ export const CANVAS_MAP: Record<string, React.FC> = {
   hacked:     HackedCanvas,
   birthday:   BirthdayCanvas,
   space:      SpaceCanvas,
+  wedding:      WeddingCanvas,
+  anniversary:  AnniversaryCanvas,
+  genderreveal: GenderRevealCanvas,
+  babyshower:   BabyShowerCanvas,
 };
 
 export const DESIGN_BG: Record<string, string> = {
@@ -1291,6 +1479,10 @@ export const DESIGN_BG: Record<string, string> = {
   hacked:     "#010f04",
   birthday:   "#5ab4e8",
   space:      "#03040e",
+  wedding:      "#F1ECE1",
+  anniversary:  "#3C1420",
+  genderreveal: "#F7F3EC",
+  babyshower:   "#EFEAE2",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1326,6 +1518,10 @@ const THEME_RSVP: Record<string, {
   hacked:     { acceptBg: "#00ff55",  acceptText: "#010f04",  declineText: "rgba(0,255,85,0.5)",    declineBorder: "rgba(0,255,85,0.3)",     inputText: "#00ff55",  inputBorder: "rgba(0,255,85,0.5)",     msgColor: "#00ff55"  },
   birthday:   { acceptBg: "#FFD700",  acceptText: "#140025",  declineText: "rgba(255,215,0,0.55)",  declineBorder: "rgba(255,215,0,0.35)",   inputText: "#FFD700",  inputBorder: "rgba(255,215,0,0.55)",   msgColor: "#FFD700"  },
   space:      { acceptBg: "#e8e4f8",  acceptText: "#03040e",  declineText: "rgba(232,228,248,0.5)", declineBorder: "rgba(232,228,248,0.3)",  inputText: "#e8e4f8",  inputBorder: "rgba(232,228,248,0.5)",  msgColor: "#e8e4f8"  },
+  wedding:      { acceptBg: "#C08552", acceptText: "#FBF7EE", declineText: "rgba(59,50,41,0.5)",   declineBorder: "rgba(59,50,41,0.3)",    inputText: "#3B3229",  inputBorder: "rgba(192,133,82,0.55)",  msgColor: "#C08552"  },
+  anniversary:  { acceptBg: "#C69749", acceptText: "#3C1420", declineText: "rgba(243,228,200,0.5)", declineBorder: "rgba(243,228,200,0.3)", inputText: "#F3E4C8",  inputBorder: "rgba(198,151,73,0.5)",   msgColor: "#E8B570"  },
+  genderreveal: { acceptBg: "#C9963E", acceptText: "#3A332B", declineText: "rgba(58,51,43,0.5)",   declineBorder: "rgba(58,51,43,0.3)",    inputText: "#3A332B",  inputBorder: "rgba(201,150,62,0.55)",  msgColor: "#C9963E"  },
+  babyshower:   { acceptBg: "#8E7BB0", acceptText: "#ffffff", declineText: "rgba(62,54,46,0.5)",   declineBorder: "rgba(62,54,46,0.3)",    inputText: "#3E362E",  inputBorder: "rgba(142,123,176,0.5)",  msgColor: "#8E7BB0"  },
 };
 
 type RsvpPhase = "idle" | "name-entry" | "submitting" | "done";
@@ -1467,6 +1663,12 @@ const FONT_FAMILY: Record<string, string> = {
   bloom:    "'Indie Flower', cursive",
   slash:    "'Rubik Glitch', sans-serif",
   fierce:   "'Spicy Rice', cursive",
+  refined:   "'Cormorant Garamond', serif",
+  signature: "'Alex Brush', cursive",
+  regal:     "'Cinzel', serif",
+  gentle:    "'Quicksand', sans-serif",
+  bubbly:    "'Baloo 2', sans-serif",
+  sturdy:    "'Oswald', sans-serif",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1600,6 +1802,16 @@ export default function Postcard({
           break;
         }
 
+        case "reveal":
+          gsap.set(content, { opacity: 1, clipPath: "inset(0 100% 0 0)" });
+          tl.to(content, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.15, ease: "power3.inOut" });
+          break;
+
+        case "bloomopen":
+          gsap.set(content, { scale: 0.85, opacity: 0 });
+          tl.to(content, { scale: 1, opacity: 1, duration: 0.9, ease: "power2.out" });
+          break;
+
         default:
           tl.to(content, { opacity: 1, duration: 0.8 });
       }
@@ -1655,6 +1867,12 @@ export default function Postcard({
           if (words.length) tl.fromTo(words,
             { opacity: 0, y: 16 },
             { opacity: 1, y: 0,  stagger: 0.05, duration: 0.45 },
+            wPos);
+          break;
+        case "blossom":
+          if (words.length) tl.fromTo(words,
+            { opacity: 0, scale: 0 },
+            { opacity: 1, scale: 1, stagger: 0.09, duration: 0.6, ease: "back.out(2.2)" },
             wPos);
           break;
       }
@@ -1746,6 +1964,24 @@ export default function Postcard({
           // We still let the GSAP reveal handle the h1 opacity so it fades in normally
           // before the decrypt effect takes over character-by-character.
           break;
+
+        case "shimmer": {
+          const titleEl = content.querySelector<HTMLElement>(".event-title");
+          if (titleEl) {
+            const base = invitation.fontColor || "currentColor";
+            titleEl.style.backgroundImage = `linear-gradient(100deg, ${base} 40%, #fff 50%, ${base} 60%)`;
+            titleEl.style.backgroundSize = "250% 100%";
+            titleEl.style.webkitBackgroundClip = "text";
+            titleEl.style.backgroundClip = "text";
+            titleEl.style.color = "transparent";
+            (titleEl.style as any).webkitTextFillColor = "transparent";
+            gsap.fromTo(titleEl,
+              { backgroundPosition: "180% 0" },
+              { backgroundPosition: "-80% 0", duration: 2.4, repeat: -1, repeatDelay: 1.6, ease: "power1.inOut", delay: loopDelay }
+            );
+          }
+          break;
+        }
       }
     });
 
@@ -1790,6 +2026,11 @@ export default function Postcard({
           from { opacity:0; transform:translateY(12px); }
           to   { opacity:1; transform:translateY(0);    }
         }
+        @keyframes trainmove {
+          from { transform:translateX(0); }
+          to   { transform:translateX(430%); }
+        }
+        .babyshower-train { animation:trainmove 13s linear infinite; }
         .word-span, .title-word, .msg-word { display:inline-block; }
       `}</style>
 

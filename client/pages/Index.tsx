@@ -34,6 +34,10 @@ const DESIGNS = [
   { id: "hacked",     label: "Hacked",     color: "bg-[#010f04] text-[#00ff55] border-2 border-[#00ff55] shadow-[0_0_16px_rgba(0,255,80,0.4)]" },
   { id: "birthday",   label: "Birthday",   color: "border-2", style: { background: "linear-gradient(135deg,#38bdf8,#f472b6)", color: "#FFD700", borderColor: "#f472b6" } },
   { id: "space",      label: "Space",      color: "bg-[#0d1b3e] text-[#e8e4f8] border-2 border-[#e8e4f8]/40" },
+  { id: "wedding",      label: "Wedding",      color: "bg-[#F1ECE1] text-[#3B3229] border-2 border-[#C08552]" },
+  { id: "anniversary",  label: "Anniversary",  color: "bg-[#3C1420] text-[#C69749] border-2 border-[#C69749]" },
+  { id: "genderreveal", label: "Gender Reveal", color: "border-2", style: { background: "linear-gradient(135deg,#F0A8BE,#9DC2E8)", color: "#3A332B", borderColor: "#C9963E" } },
+  { id: "babyshower",   label: "Baby Shower",  color: "border-2", style: { background: "linear-gradient(135deg,#C9BFE0,#EFC9D2 55%,#BEE0CE)", color: "#3E362E", borderColor: "#A69884" } },
 ];
 
 const EFFECTS = [
@@ -44,6 +48,9 @@ const EFFECTS = [
   { id: "decrypted", label: "Decrypted", desc: "Characters cycle through random glyphs then lock in" },
   { id: "assemble",  label: "Assemble",  desc: "Words fly in from every direction" },
   { id: "bouncing",  label: "Bouncing",  desc: "Pops in with energetic rhythmic bounce" },
+  { id: "shimmer",   label: "Shimmer",   desc: "A band of light sweeps once across the words, then rests" },
+  { id: "reveal",    label: "Reveal",    desc: "Hidden behind a wipe that slides away to unveil the title" },
+  { id: "blossom",   label: "Blossom",   desc: "Each word blooms open with a soft elastic overshoot" },
 ];
 
 const FONTS = [
@@ -55,6 +62,12 @@ const FONTS = [
   { id: "bloom",    label: "Bloom",    family: "'Indie Flower', cursive" },
   { id: "slash",    label: "Slash",    family: "'Rubik Glitch', sans-serif" },
   { id: "fierce",   label: "Fierce",   family: "'Spicy Rice', cursive" },
+  { id: "refined",   label: "Refined",   family: "'Cormorant Garamond', serif" },
+  { id: "signature", label: "Signature", family: "'Alex Brush', cursive" },
+  { id: "regal",     label: "Regal",     family: "'Cinzel', serif" },
+  { id: "gentle",    label: "Gentle",    family: "'Quicksand', sans-serif" },
+  { id: "bubbly",    label: "Bubbly",    family: "'Baloo 2', sans-serif" },
+  { id: "sturdy",    label: "Sturdy",    family: "'Oswald', sans-serif" },
 ];
 
 const COLOR_SWATCHES = [
@@ -350,6 +363,34 @@ function TitleEffectPreview({
             gsap.set(el, { scale: 0, opacity: 0 });
             tl.to(el, { scale: 1, opacity: 1, duration: 0.9, ease: "back.out(1.7)" });
             tl.to(el, { y: -20, scaleY: 1.05, scaleX: 0.96, duration: 0.45, repeat: -1, yoyo: true, ease: "power2.inOut" }, "+=0.2");
+            break;
+
+          case "shimmer":
+            gsap.set(el, { opacity: 0, y: 24 });
+            tl.to(el, { opacity: 1, y: 0, duration: 1.0 });
+            el.style.backgroundImage = `linear-gradient(100deg, ${fontColor} 40%, #fff 50%, ${fontColor} 60%)`;
+            el.style.backgroundSize = "250% 100%";
+            (el.style as any).webkitBackgroundClip = "text";
+            el.style.backgroundClip = "text";
+            el.style.color = "transparent";
+            (el.style as any).webkitTextFillColor = "transparent";
+            gsap.fromTo(el,
+              { backgroundPosition: "180% 0" },
+              { backgroundPosition: "-80% 0", duration: 2.2, repeat: -1, repeatDelay: 1.4, ease: "power1.inOut", delay: 1.1 }
+            );
+            break;
+
+          case "reveal":
+            gsap.set(el, { opacity: 1, clipPath: "inset(0 100% 0 0)" });
+            tl.to(el, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.1, ease: "power3.inOut" });
+            break;
+
+          case "blossom":
+            gsap.set(el, { opacity: 1 });
+            if (words.length) {
+              gsap.set(words, { opacity: 0, scale: 0 });
+              tl.to(words, { opacity: 1, scale: 1, stagger: 0.09, duration: 0.6, ease: "back.out(2.2)" });
+            }
             break;
 
           default:
@@ -908,6 +949,8 @@ export default function Index() {
   const nextStep = () => {
     if (step === 1 && !formData.title.trim()) { toast.error("Add an event title!"); return; }
     if (step === 1 && !formData.message.trim()) { toast.error("Add a message for your guests!"); return; }
+    // Locked designs stay previewable in step 2 — only block moving past it
+    if (step === 2 && !isPro && PRO_DESIGN_IDS.includes(formData.designId)) { setShowUpgrade(true); return; }
     animateStep(true);
   };
   const prevStep = () => animateStep(false);
@@ -942,6 +985,8 @@ export default function Index() {
   const pendingCreateRef = useRef(false);
 
   const handleCreate = () => {
+    // Locked effects stay previewable in step 4 — only block the actual create
+    if (!isPro && PRO_EFFECT_IDS.includes(formData.effectId)) { setShowUpgrade(true); return; }
     if (authState !== "signed-in") {
       // Google OAuth is blocked inside in-app browsers (LinkedIn, Instagram…) —
       // hand the draft over to a real browser instead of opening the sign-in modal
@@ -1263,10 +1308,7 @@ export default function Index() {
                   return (
                     <button
                       key={d.id}
-                      onClick={() => {
-                        if (locked) { setShowUpgrade(true); return; }
-                        setFormData({ ...formData, designId: d.id as any });
-                      }}
+                      onClick={() => setFormData({ ...formData, designId: d.id as any })}
                       style={{ ...(d.style ?? {}), ...(formData.designId === d.id ? { "--tw-ring-offset-color": BRAND } : {}) } as React.CSSProperties}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
@@ -1378,7 +1420,6 @@ export default function Index() {
                     <button
                       key={e.id}
                       onClick={() => {
-                        if (locked) { setShowUpgrade(true); return; }
                         setFormData({ ...formData, effectId: e.id as any });
                         setEffectPreviewKey(k => k + 1);
                       }}

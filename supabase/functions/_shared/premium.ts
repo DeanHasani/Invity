@@ -5,16 +5,18 @@
 export const ALL_DESIGN_IDS = [
   "minimal", "playful", "elegant", "modernist", "love", "natural",
   "scary", "futuristic", "cyberpunk", "hacked", "birthday", "space",
+  "wedding", "anniversary", "genderreveal", "babyshower",
 ] as const;
 
 export const ALL_EFFECT_IDS = [
   "static", "glowing", "glitching", "smoke", "decrypted", "assemble", "bouncing",
+  "shimmer", "reveal", "blossom",
 ] as const;
 
 // Pro-only subsets. Adjust freely — enforcement (create-invitation) and the
 // lock badges in the builder both read from here.
-export const PRO_DESIGN_IDS: readonly string[] = ["cyberpunk", "hacked", "birthday", "space"];
-export const PRO_EFFECT_IDS: readonly string[] = ["smoke", "decrypted", "assemble"];
+export const PRO_DESIGN_IDS: readonly string[] = ["cyberpunk", "hacked", "birthday", "space", "anniversary", "genderreveal", "babyshower"];
+export const PRO_EFFECT_IDS: readonly string[] = ["smoke", "decrypted", "assemble", "reveal"];
 
 // Subscription statuses that count as Pro. past_due keeps access while Paddle
 // retries a failed payment (dunning); Paddle flips it to canceled/paused itself
