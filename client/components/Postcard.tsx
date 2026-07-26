@@ -1311,7 +1311,7 @@ function WeddingCanvas() {
         src="/wedding/wedding.webm"
         autoPlay loop muted playsInline
         className="absolute left-1/2 top-1/2 pointer-events-none"
-        style={{ width: "82%", transform: "translate(-50%,-50%)", opacity: 0.26, objectFit: "contain" }}
+        style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", opacity: 0.24, objectFit: "contain" }}
         onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
       />
       <div className="absolute pointer-events-none flex gap-0.5" style={{ top: -4, left: -4 }}>
@@ -1369,8 +1369,10 @@ function GenderRevealCanvas() {
   const blueRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current; if (!el) return;
+    // Both layers oscillate between the SAME two opacities, out of phase, so
+    // dominance genuinely alternates instead of pink just sitting on top.
     if (pinkRef.current) gsap.to(pinkRef.current, { opacity: 0.15, duration: 4.5, repeat: -1, yoyo: true, ease: "sine.inOut" });
-    if (blueRef.current) gsap.to(blueRef.current, { opacity: 0.15, duration: 4.5, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 2.25 });
+    if (blueRef.current) gsap.to(blueRef.current, { opacity: 0.9,  duration: 4.5, repeat: -1, yoyo: true, ease: "sine.inOut", delay: 2.25 });
 
     const items: HTMLDivElement[] = [];
     const COLORS = ["#C9963E", "#F0A8BE", "#9DC2E8"];
@@ -1401,7 +1403,7 @@ function GenderRevealCanvas() {
     <>
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
       <div ref={pinkRef} className="absolute inset-0 pointer-events-none"
-        style={{ opacity: 0.95, background: "radial-gradient(circle at 30% 25%,#F0A8BE,transparent 70%)" }} />
+        style={{ opacity: 0.9, background: "radial-gradient(circle at 30% 25%,#F0A8BE,transparent 70%)" }} />
       <div ref={blueRef} className="absolute inset-0 pointer-events-none"
         style={{ opacity: 0.15, background: "radial-gradient(circle at 72% 68%,#9DC2E8,transparent 70%)" }} />
     </>
@@ -2026,11 +2028,6 @@ export default function Postcard({
           from { opacity:0; transform:translateY(12px); }
           to   { opacity:1; transform:translateY(0);    }
         }
-        @keyframes trainmove {
-          from { transform:translateX(0); }
-          to   { transform:translateX(430%); }
-        }
-        .babyshower-train { animation:trainmove 13s linear infinite; }
         .word-span, .title-word, .msg-word { display:inline-block; }
       `}</style>
 
