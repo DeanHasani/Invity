@@ -1266,6 +1266,80 @@ function SpaceCanvas() {
   return <div ref={containerRef} className="absolute inset-0 pointer-events-none" />;
 }
 
+// Renders a video with its solid black/white backdrop keyed out to
+// transparency in real time (frame-by-frame canvas compositing). Several
+// stock clips (wedding, wavingbear, train) ship as plain opaque video with
+// no alpha channel — this is what actually makes them look "boxed" behind
+// the invitation text, on every platform, not just mobile.
+function ChromaKeyVideo({
+  src,
+  keyColor,
+  className,
+  style,
+  threshold = [18, 70],
+}: {
+  src: string;
+  keyColor: "black" | "white";
+  className?: string;
+  style?: React.CSSProperties;
+  threshold?: [number, number];
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    const video = document.createElement("video");
+    video.src = src;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    // Kept technically in the document (not display:none) — some mobile
+    // browsers suspend decoding of a fully detached/hidden video element.
+    video.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;";
+    video.addEventListener("error", () => { canvas.style.display = "none"; });
+    document.body.appendChild(video);
+
+    let raf = 0;
+    let sized = false;
+    const [lo, hi] = threshold;
+
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      if (video.readyState < 2) return;
+      if (!sized) {
+        if (!video.videoWidth) return;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        sized = true;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = frame.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const dist = keyColor === "black" ? (r + g + b) / 3 : 255 - Math.min(r, g, b);
+        d[i + 3] = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
+      }
+      ctx.putImageData(frame, 0, 0);
+    };
+
+    video.play().catch(() => {});
+    raf = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      video.pause();
+      video.remove();
+    };
+  }, [src, keyColor, threshold]);
+
+  return <canvas ref={canvasRef} className={className} style={style} />;
+}
+
 function WeddingCanvas() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1317,12 +1391,11 @@ function WeddingCanvas() {
   return (
     <>
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
-      <video
+      <ChromaKeyVideo
         src="/wedding/wedding.webm"
-        autoPlay loop muted playsInline
+        keyColor="black"
         className="absolute left-1/2 top-1/2 pointer-events-none"
         style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", opacity: 0.24, objectFit: "contain" }}
-        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
       />
       <div className="absolute pointer-events-none flex gap-0.5" style={{ top: -4, left: -4 }}>
         <Flower rose /><Flower rose={false} />
@@ -1427,19 +1500,17 @@ function BabyShowerCanvas() {
         className="absolute inset-0 pointer-events-none"
         style={{ background: "linear-gradient(135deg,#EFEAE2 0%,#EFC9D2 38%,#C9BFE0 68%,#BEE0CE 100%)" }}
       />
-      <video
+      <ChromaKeyVideo
         src="/babyshower/wavingbear.webm"
-        autoPlay loop muted playsInline
+        keyColor="black"
         className="absolute pointer-events-none"
         style={{ width: "34%", maxWidth: 220, left: "18%", bottom: "6%", opacity: 0.55, objectFit: "contain" }}
-        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
       />
-      <video
+      <ChromaKeyVideo
         src="/babyshower/train.webm"
-        autoPlay loop muted playsInline
+        keyColor="black"
         className="absolute pointer-events-none babyshower-train"
         style={{ width: "26%", maxWidth: 190, top: "34%", opacity: 0.5, objectFit: "contain" }}
-        onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
       />
     </>
   );
