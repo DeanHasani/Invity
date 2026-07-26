@@ -1,9 +1,13 @@
-Drop the two baby shower animations here as:
+Two self-animating SVGs live here:
 
-    wavingbear.webm   — a waving bear, positioned lower-left-of-center at medium size
-    train.webm        — a train, positioned just above the vertical middle,
-                        scrolls left → right across the screen on a loop
+    bear.svg    — a waving bear, positioned lower-left-of-center at medium size
+    train.svg   — a train, positioned just above the vertical middle. Its own
+                  SMIL animation covers small internal details; the left-to-right
+                  scroll across the whole screen comes from the CSS
+                  `.babyshower-train` keyframe in client/global.css
 
-Both referenced by `BabyShowerCanvas` in `client/components/Postcard.tsx` at
-reduced opacity (~50-55%) so they stay behind the invitation text. If either
-file is missing, that video element just hides itself — nothing breaks.
+Both referenced directly via plain `<img>` tags in `BabyShowerCanvas`
+(`client/components/Postcard.tsx`) at reduced opacity (~50-55%) so they stay
+behind the invitation text. No chroma-key/canvas processing needed — the
+animation is baked into the SVG itself (SMIL) with real transparency. If
+either file is missing, that element just hides itself — nothing breaks.

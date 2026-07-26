@@ -1266,92 +1266,6 @@ function SpaceCanvas() {
   return <div ref={containerRef} className="absolute inset-0 pointer-events-none" />;
 }
 
-// Renders a video with its solid black/white backdrop keyed out to
-// transparency in real time (frame-by-frame canvas compositing). Several
-// stock clips (wedding, wavingbear, train) ship as plain opaque video with
-// no alpha channel — this is what actually makes them look "boxed" behind
-// the invitation text, on every platform, not just mobile.
-function ChromaKeyVideo({
-  src,
-  keyColor,
-  opacity = 1,
-  className,
-  style,
-  threshold = [18, 70],
-}: {
-  src: string;
-  keyColor: "black" | "white";
-  /** Baked into the alpha channel itself rather than left as CSS opacity —
-   * a canvas repainted every frame via putImageData PLUS a separate
-   * compositor opacity pass is a known source of ghosting/trailing
-   * artifacts on desktop GPU compositors (looked fine on mobile, smeared
-   * on desktop — classic symptom of this double-compositing interaction). */
-  opacity?: number;
-  className?: string;
-  style?: React.CSSProperties;
-  threshold?: [number, number];
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true, alpha: true });
-    if (!ctx) return;
-
-    const video = document.createElement("video");
-    video.src = src;
-    video.loop = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    // Kept technically in the document (not display:none) — some mobile
-    // browsers suspend decoding of a fully detached/hidden video element.
-    video.style.cssText = "position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;left:-9999px;top:-9999px;";
-    video.addEventListener("error", () => { canvas.style.display = "none"; });
-    document.body.appendChild(video);
-
-    let raf = 0;
-    let sized = false;
-    const [lo, hi] = threshold;
-    const alphaScale = Math.max(0, Math.min(1, opacity));
-
-    const draw = () => {
-      raf = requestAnimationFrame(draw);
-      if (video.readyState < 2) return;
-      if (!sized) {
-        if (!video.videoWidth) return;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        sized = true;
-      }
-      // Explicit clear before every redraw — belt-and-braces against any
-      // stale/partial paint left over from the previous frame.
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const d = frame.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i + 1], b = d[i + 2];
-        const dist = keyColor === "black" ? (r + g + b) / 3 : 255 - Math.min(r, g, b);
-        const a = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
-        d[i + 3] = Math.round(a * alphaScale);
-      }
-      ctx.putImageData(frame, 0, 0);
-    };
-
-    video.play().catch(() => {});
-    raf = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      video.pause();
-      video.remove();
-    };
-  }, [src, keyColor, threshold, opacity]);
-
-  return <canvas ref={canvasRef} className={className} style={style} />;
-}
-
 function WeddingCanvas() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1384,25 +1298,27 @@ function WeddingCanvas() {
   return (
     <>
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
-      <ChromaKeyVideo
-        src="/wedding/wedding.webm"
-        keyColor="black"
-        opacity={0.24}
+      <img
+        src="/wedding/wedding.svg"
+        alt=""
         className="absolute left-1/2 top-1/2 pointer-events-none"
-        style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", objectFit: "contain" }}
+        style={{ width: "42%", maxWidth: 320, height: "auto", transform: "translate(-50%,-50%)", opacity: 0.24 }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
-      <ChromaKeyVideo
-        src="/wedding/flower.webm"
-        keyColor="black"
+      <img
+        src="/wedding/flower.svg"
+        alt=""
         className="absolute pointer-events-none"
-        style={{ width: 84, top: -6, left: -6, objectFit: "contain" }}
+        style={{ width: 84, height: "auto", top: -6, left: -6 }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
       {/* Same clip, mirrored — reads as a different bouquet angle in the opposite corner */}
-      <ChromaKeyVideo
-        src="/wedding/flower.webm"
-        keyColor="black"
+      <img
+        src="/wedding/flower.svg"
+        alt=""
         className="absolute pointer-events-none"
-        style={{ width: 84, bottom: -6, right: -6, transform: "scaleX(-1)", objectFit: "contain" }}
+        style={{ width: 84, height: "auto", bottom: -6, right: -6, transform: "scaleX(-1)" }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
     </>
   );
@@ -1501,19 +1417,19 @@ function BabyShowerCanvas() {
         className="absolute inset-0 pointer-events-none"
         style={{ background: "linear-gradient(135deg,#EFEAE2 0%,#EFC9D2 38%,#C9BFE0 68%,#BEE0CE 100%)" }}
       />
-      <ChromaKeyVideo
-        src="/babyshower/wavingbear.webm"
-        keyColor="black"
-        opacity={0.55}
+      <img
+        src="/babyshower/bear.svg"
+        alt=""
         className="absolute pointer-events-none"
-        style={{ width: "34%", maxWidth: 220, left: "18%", bottom: "6%", objectFit: "contain" }}
+        style={{ width: "34%", maxWidth: 220, height: "auto", left: "18%", bottom: "6%", opacity: 0.55 }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
-      <ChromaKeyVideo
-        src="/babyshower/train.webm"
-        keyColor="black"
-        opacity={0.5}
+      <img
+        src="/babyshower/train.svg"
+        alt=""
         className="absolute pointer-events-none babyshower-train"
-        style={{ width: "26%", maxWidth: 190, top: "34%", objectFit: "contain" }}
+        style={{ width: "26%", maxWidth: 190, height: "auto", top: "34%", opacity: 0.5 }}
+        onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
     </>
   );
