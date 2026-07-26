@@ -1428,7 +1428,7 @@ function BabyShowerCanvas() {
         src="/babyshower/train.webm"
         autoPlay loop muted playsInline
         className="absolute pointer-events-none babyshower-train"
-        style={{ width: "26%", maxWidth: 190, top: "34%", left: "-32%", opacity: 0.5, objectFit: "contain" }}
+        style={{ width: "26%", maxWidth: 190, top: "34%", opacity: 0.5, objectFit: "contain" }}
         onError={e => { (e.currentTarget as HTMLVideoElement).style.display = "none"; }}
       />
     </>
@@ -1670,6 +1670,8 @@ const FONT_FAMILY: Record<string, string> = {
   gentle:    "'Quicksand', sans-serif",
   bubbly:    "'Baloo 2', sans-serif",
   sturdy:    "'Oswald', sans-serif",
+  mighty:    "'Germania One', cursive",
+  griffy:    "'Griffy', cursive",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

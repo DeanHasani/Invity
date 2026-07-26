@@ -67,6 +67,8 @@ const FONTS = [
   { id: "gentle",    label: "Gentle",    family: "'Quicksand', sans-serif" },
   { id: "bubbly",    label: "Bubbly",    family: "'Baloo 2', sans-serif" },
   { id: "sturdy",    label: "Sturdy",    family: "'Oswald', sans-serif" },
+  { id: "mighty",    label: "Mighty",    family: "'Germania One', cursive" },
+  { id: "griffy",    label: "Griffy",    family: "'Griffy', cursive" },
 ];
 
 const COLOR_SWATCHES = [
