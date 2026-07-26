@@ -18,6 +18,16 @@ interface PostcardProps {
   onRsvp?: (name: string, status: "accepted" | "declined") => Promise<void>;
 }
 
+// Perceived-brightness check for a #rrggbb color. Used to flip effects that
+// rely on a light/dark contrast (e.g. the shimmer highlight) so they still
+// read against whichever font color the user picked.
+export function isLightColor(hex: string): boolean {
+  const h = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return true;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme config
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1971,8 +1981,11 @@ export default function Postcard({
         case "shimmer": {
           const titleEl = content.querySelector<HTMLElement>(".event-title");
           if (titleEl) {
-            const base = invitation.fontColor || "currentColor";
-            titleEl.style.backgroundImage = `linear-gradient(100deg, ${base} 40%, #fff 50%, ${base} 60%)`;
+            const base = invitation.fontColor || "#ffffff";
+            // A white highlight is invisible against already-white/bright
+            // text — flip it to a dark glint whenever the base is light.
+            const highlight = isLightColor(base) ? "#1a1a1a" : "#ffffff";
+            titleEl.style.backgroundImage = `linear-gradient(100deg, ${base} 40%, ${highlight} 50%, ${base} 60%)`;
             titleEl.style.backgroundSize = "250% 100%";
             titleEl.style.webkitBackgroundClip = "text";
             titleEl.style.backgroundClip = "text";

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { CANVAS_MAP, DESIGN_BG, DecryptedText } from "@/components/Postcard";
+import { CANVAS_MAP, DESIGN_BG, DecryptedText, isLightColor } from "@/components/Postcard";
 import { InAppBrowserBanner, detectInApp } from "@/components/InAppBrowserBanner";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -366,10 +366,13 @@ function TitleEffectPreview({
             tl.to(el, { y: -20, scaleY: 1.05, scaleX: 0.96, duration: 0.45, repeat: -1, yoyo: true, ease: "power2.inOut" }, "+=0.2");
             break;
 
-          case "shimmer":
+          case "shimmer": {
             gsap.set(el, { opacity: 0, y: 24 });
             tl.to(el, { opacity: 1, y: 0, duration: 1.0 });
-            el.style.backgroundImage = `linear-gradient(100deg, ${fontColor} 40%, #fff 50%, ${fontColor} 60%)`;
+            // A white highlight is invisible against already-white/bright
+            // text — flip it to a dark glint whenever the base is light.
+            const highlight = isLightColor(fontColor) ? "#1a1a1a" : "#ffffff";
+            el.style.backgroundImage = `linear-gradient(100deg, ${fontColor} 40%, ${highlight} 50%, ${fontColor} 60%)`;
             el.style.backgroundSize = "250% 100%";
             (el.style as any).webkitBackgroundClip = "text";
             el.style.backgroundClip = "text";
@@ -380,6 +383,7 @@ function TitleEffectPreview({
               { backgroundPosition: "-80% 0", duration: 2.2, repeat: -1, repeatDelay: 1.4, ease: "power1.inOut", delay: 1.1 }
             );
             break;
+          }
 
           case "reveal":
             gsap.set(el, { opacity: 1, clipPath: "inset(0 100% 0 0)" });
