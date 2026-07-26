@@ -1274,12 +1274,19 @@ function SpaceCanvas() {
 function ChromaKeyVideo({
   src,
   keyColor,
+  opacity = 1,
   className,
   style,
   threshold = [18, 70],
 }: {
   src: string;
   keyColor: "black" | "white";
+  /** Baked into the alpha channel itself rather than left as CSS opacity —
+   * a canvas repainted every frame via putImageData PLUS a separate
+   * compositor opacity pass is a known source of ghosting/trailing
+   * artifacts on desktop GPU compositors (looked fine on mobile, smeared
+   * on desktop — classic symptom of this double-compositing interaction). */
+  opacity?: number;
   className?: string;
   style?: React.CSSProperties;
   threshold?: [number, number];
@@ -1288,7 +1295,7 @@ function ChromaKeyVideo({
 
   useEffect(() => {
     const canvas = canvasRef.current; if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext("2d", { willReadFrequently: true, alpha: true });
     if (!ctx) return;
 
     const video = document.createElement("video");
@@ -1306,6 +1313,7 @@ function ChromaKeyVideo({
     let raf = 0;
     let sized = false;
     const [lo, hi] = threshold;
+    const alphaScale = Math.max(0, Math.min(1, opacity));
 
     const draw = () => {
       raf = requestAnimationFrame(draw);
@@ -1316,13 +1324,17 @@ function ChromaKeyVideo({
         canvas.height = video.videoHeight;
         sized = true;
       }
+      // Explicit clear before every redraw — belt-and-braces against any
+      // stale/partial paint left over from the previous frame.
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const d = frame.data;
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i], g = d[i + 1], b = d[i + 2];
         const dist = keyColor === "black" ? (r + g + b) / 3 : 255 - Math.min(r, g, b);
-        d[i + 3] = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
+        const a = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
+        d[i + 3] = Math.round(a * alphaScale);
       }
       ctx.putImageData(frame, 0, 0);
     };
@@ -1335,7 +1347,7 @@ function ChromaKeyVideo({
       video.pause();
       video.remove();
     };
-  }, [src, keyColor, threshold]);
+  }, [src, keyColor, threshold, opacity]);
 
   return <canvas ref={canvasRef} className={className} style={style} />;
 }
@@ -1375,8 +1387,9 @@ function WeddingCanvas() {
       <ChromaKeyVideo
         src="/wedding/wedding.webm"
         keyColor="black"
+        opacity={0.24}
         className="absolute left-1/2 top-1/2 pointer-events-none"
-        style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", opacity: 0.24, objectFit: "contain" }}
+        style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", objectFit: "contain" }}
       />
       <ChromaKeyVideo
         src="/wedding/flower.webm"
@@ -1491,14 +1504,16 @@ function BabyShowerCanvas() {
       <ChromaKeyVideo
         src="/babyshower/wavingbear.webm"
         keyColor="black"
+        opacity={0.55}
         className="absolute pointer-events-none"
-        style={{ width: "34%", maxWidth: 220, left: "18%", bottom: "6%", opacity: 0.55, objectFit: "contain" }}
+        style={{ width: "34%", maxWidth: 220, left: "18%", bottom: "6%", objectFit: "contain" }}
       />
       <ChromaKeyVideo
         src="/babyshower/train.webm"
         keyColor="black"
+        opacity={0.5}
         className="absolute pointer-events-none babyshower-train"
-        style={{ width: "26%", maxWidth: 190, top: "34%", opacity: 0.5, objectFit: "contain" }}
+        style={{ width: "26%", maxWidth: 190, top: "34%", objectFit: "contain" }}
       />
     </>
   );
