@@ -1369,25 +1369,6 @@ function WeddingCanvas() {
     return () => items.forEach(p => p.remove());
   }, []);
 
-  const Flower = ({ rose }: { rose: boolean }) => (
-    <div className="relative" style={{ width: 38, height: 38 }}>
-      {[0, 60, 120, 180, 240, 300].map(deg => (
-        <div
-          key={deg}
-          className="absolute"
-          style={{
-            width: 16, height: 9, borderRadius: "50%",
-            background: rose ? "#C08552" : "#FBF7EE",
-            top: 14.5, left: 11,
-            transform: `rotate(${deg}deg) translateX(8px)`,
-            opacity: rose ? 0.88 : 0.94,
-          }}
-        />
-      ))}
-      <div className="absolute rounded-full" style={{ width: 7, height: 7, top: 15.5, left: 15.5, background: rose ? "#92A378" : "#C08552" }} />
-    </div>
-  );
-
   return (
     <>
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
@@ -1397,12 +1378,19 @@ function WeddingCanvas() {
         className="absolute left-1/2 top-1/2 pointer-events-none"
         style={{ width: "42%", maxWidth: 320, transform: "translate(-50%,-50%)", opacity: 0.24, objectFit: "contain" }}
       />
-      <div className="absolute pointer-events-none flex gap-0.5" style={{ top: -4, left: -4 }}>
-        <Flower rose /><Flower rose={false} />
-      </div>
-      <div className="absolute pointer-events-none flex gap-0.5" style={{ bottom: -4, right: -4, transform: "rotate(180deg)" }}>
-        <Flower rose={false} /><Flower rose />
-      </div>
+      <ChromaKeyVideo
+        src="/wedding/flower.webm"
+        keyColor="black"
+        className="absolute pointer-events-none"
+        style={{ width: 84, top: -6, left: -6, objectFit: "contain" }}
+      />
+      {/* Same clip, mirrored — reads as a different bouquet angle in the opposite corner */}
+      <ChromaKeyVideo
+        src="/wedding/flower.webm"
+        keyColor="black"
+        className="absolute pointer-events-none"
+        style={{ width: 84, bottom: -6, right: -6, transform: "scaleX(-1)", objectFit: "contain" }}
+      />
     </>
   );
 }
