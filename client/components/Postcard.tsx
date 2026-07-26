@@ -1312,9 +1312,6 @@ function ChromaKeyVideo({
 
     let raf = 0;
     let sized = false;
-    let w = 0, h = 0;
-    let rawA: Uint8ClampedArray | null = null;
-    let eroded: Uint8ClampedArray | null = null;
     const [lo, hi] = threshold;
     const alphaScale = Math.max(0, Math.min(1, opacity));
 
@@ -1323,61 +1320,21 @@ function ChromaKeyVideo({
       if (video.readyState < 2) return;
       if (!sized) {
         if (!video.videoWidth) return;
-        w = canvas.width = video.videoWidth;
-        h = canvas.height = video.videoHeight;
-        rawA = new Uint8ClampedArray(w * h);
-        eroded = new Uint8ClampedArray(w * h);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         sized = true;
       }
       // Explicit clear before every redraw — belt-and-braces against any
       // stale/partial paint left over from the previous frame.
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(video, 0, 0, w, h);
-      const frame = ctx.getImageData(0, 0, w, h);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const d = frame.data;
-
-      // Pass 1: raw per-pixel alpha from color distance to the key color.
-      for (let p = 0; p < w * h; p++) {
-        const i = p * 4;
+      for (let i = 0; i < d.length; i += 4) {
         const r = d[i], g = d[i + 1], b = d[i + 2];
         const dist = keyColor === "black" ? (r + g + b) / 3 : 255 - Math.min(r, g, b);
-        rawA![p] = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
-      }
-      // Pass 2: choke the matte by 1px (min over the 3x3 neighborhood) — VP8
-      // compression leaves a ring of "neither background nor subject" noise
-      // right at the edge, which otherwise flickers frame to frame (the
-      // "glitchy border" this is fixing). Eating it away is more reliable
-      // than trying to key it cleanly.
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const p = y * w + x;
-          let m = rawA![p];
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const nx = x + dx, ny = y + dy;
-              if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-              const v = rawA![ny * w + nx];
-              if (v < m) m = v;
-            }
-          }
-          eroded![p] = m;
-        }
-      }
-      // Pass 3: light 3x3 blur on the eroded alpha to soften the edge the
-      // choke just tightened, then bake in the target opacity.
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const p = y * w + x;
-          let sum = 0, count = 0;
-          for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-              const nx = x + dx, ny = y + dy;
-              if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-              sum += eroded![ny * w + nx]; count++;
-            }
-          }
-          d[p * 4 + 3] = Math.round((sum / count) * alphaScale);
-        }
+        const a = dist <= lo ? 0 : dist >= hi ? 255 : Math.round(((dist - lo) / (hi - lo)) * 255);
+        d[i + 3] = Math.round(a * alphaScale);
       }
       ctx.putImageData(frame, 0, 0);
     };
