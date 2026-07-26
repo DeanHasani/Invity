@@ -63,7 +63,6 @@ const FONTS = [
   { id: "slash",    label: "Slash",    family: "'Rubik Glitch', sans-serif" },
   { id: "fierce",   label: "Fierce",   family: "'Spicy Rice', cursive" },
   { id: "refined",   label: "Refined",   family: "'Cormorant Garamond', serif" },
-  { id: "signature", label: "Signature", family: "'Alex Brush', cursive" },
   { id: "regal",     label: "Regal",     family: "'Cinzel', serif" },
   { id: "gentle",    label: "Gentle",    family: "'Quicksand', sans-serif" },
   { id: "bubbly",    label: "Bubbly",    family: "'Baloo 2', sans-serif" },

@@ -1666,7 +1666,6 @@ const FONT_FAMILY: Record<string, string> = {
   slash:    "'Rubik Glitch', sans-serif",
   fierce:   "'Spicy Rice', cursive",
   refined:   "'Cormorant Garamond', serif",
-  signature: "'Alex Brush', cursive",
   regal:     "'Cinzel', serif",
   gentle:    "'Quicksand', sans-serif",
   bubbly:    "'Baloo 2', sans-serif",

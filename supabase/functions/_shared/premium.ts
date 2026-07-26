@@ -16,7 +16,7 @@ export const ALL_EFFECT_IDS = [
 // Pro-only subsets. Adjust freely — enforcement (create-invitation) and the
 // lock badges in the builder both read from here.
 export const PRO_DESIGN_IDS: readonly string[] = ["cyberpunk", "hacked", "birthday", "space", "anniversary", "genderreveal", "babyshower"];
-export const PRO_EFFECT_IDS: readonly string[] = ["smoke", "decrypted", "assemble", "reveal"];
+export const PRO_EFFECT_IDS: readonly string[] = ["glitching", "decrypted", "assemble", "reveal"];
 
 // Subscription statuses that count as Pro. past_due keeps access while Paddle
 // retries a failed payment (dunning); Paddle flips it to canceled/paused itself
