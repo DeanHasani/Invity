@@ -1308,7 +1308,7 @@ function WeddingCanvas() {
     <>
       <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none" />
       <video
-        src="/wedding/wedding-loop.webm"
+        src="/wedding/wedding.webm"
         autoPlay loop muted playsInline
         className="absolute left-1/2 top-1/2 pointer-events-none"
         style={{ width: "82%", transform: "translate(-50%,-50%)", opacity: 0.26, objectFit: "contain" }}
