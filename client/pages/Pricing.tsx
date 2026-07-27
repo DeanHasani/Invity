@@ -6,15 +6,10 @@ import { useSubscription, awaitProActivation } from "@/hooks/useSubscription";
 import { supabase, signInWithGoogle } from "@/lib/supabase";
 import { openProCheckout, type BillingCycle } from "@/lib/paddle";
 import { PRICE_MONTHLY_LABEL, PRICE_YEARLY_LABEL } from "@shared/premium";
+import { SiteFooter } from "@/components/SiteFooter";
+import { THEME_COLORS, readStoredTheme, themeVars } from "@/lib/theme";
 
 const LG_FONT = "'Luckiest Guy', cursive";
-
-const THEME_COLORS: Record<string, { hex: string; rgb: string }> = {
-  orange:   { hex: "#F05A28", rgb: "240,90,40" },
-  sky:      { hex: "#0284C7", rgb: "2,132,199" },
-  teal:     { hex: "#14B8A6", rgb: "20,184,166" },
-  warmgray: { hex: "#7C6A5E", rgb: "124,106,94" },
-};
 
 const ROWS: Array<{ label: string; free: string; pro: string }> = [
   { label: "Invitations per day", free: "2",       pro: "Unlimited" },
@@ -26,10 +21,8 @@ const ROWS: Array<{ label: string; free: string; pro: string }> = [
 ];
 
 export default function Pricing() {
-  const [theme] = useState(() => {
-    const t = localStorage.getItem("invity_theme") ?? "orange";
-    return THEME_COLORS[t] ?? THEME_COLORS.orange;
-  });
+  const [themeName] = useState(readStoredTheme);
+  const theme = THEME_COLORS[themeName];
   const { user, isPro, currentPeriodEnd, cancelScheduled, refetch } = useSubscription();
   const [cycle, setCycle] = useState<BillingCycle>("year");
   const [buyBusy, setBuyBusy] = useState(false);
@@ -96,8 +89,7 @@ export default function Pricing() {
       style={{
         fontFamily: "'Montserrat', sans-serif",
         backgroundColor: theme.hex,
-        "--brand": theme.hex,
-        "--brand-mid": `rgba(${theme.rgb},0.45)`,
+        ...themeVars(themeName),
       } as React.CSSProperties}
     >
       <FloatingPhrases active />
@@ -223,6 +215,8 @@ export default function Pricing() {
           </p>
         </div>
       </div>
+
+      <SiteFooter variant="page" current="/pricing" />
     </div>
   );
 }

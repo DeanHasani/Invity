@@ -1,20 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FloatingPhrases } from "@/components/FloatingPhrases";
+import { SiteFooter } from "@/components/SiteFooter";
+import { THEME_COLORS, readStoredTheme } from "@/lib/theme";
 
 const LG_FONT = "'Luckiest Guy', cursive";
 
-const THEME_COLORS: Record<string, string> = {
-  orange:   "#F05A28",
-  sky:      "#0284C7",
-  teal:     "#14B8A6",
-  warmgray: "#7C6A5E",
-};
-
 export default function PrivacyPolicy() {
   const [brand] = useState(() => {
-    const t = localStorage.getItem("invity_theme") ?? "orange";
-    return THEME_COLORS[t] ?? THEME_COLORS.orange;
+    return THEME_COLORS[readStoredTheme()].hex;
   });
 
   return (
@@ -36,7 +30,7 @@ export default function PrivacyPolicy() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pb-16 pt-8">
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pb-8 pt-8">
         <div className="w-full max-w-2xl space-y-8">
           <h1
             className="text-4xl md:text-6xl uppercase tracking-tight leading-none"
@@ -73,6 +67,8 @@ export default function PrivacyPolicy() {
           </Block>
         </div>
       </div>
+
+      <SiteFooter variant="page" current="/privacy" />
     </div>
   );
 }

@@ -1594,7 +1594,7 @@ function RsvpZone({
   if (phase === "name-entry" || phase === "submitting") {
     return (
       <div
-        className="absolute bottom-4 md:bottom-6 left-0 right-0 z-20 flex flex-col items-center gap-3 px-6 text-center max-w-xs mx-auto"
+        className="relative w-full mt-6 md:mt-0 md:absolute md:bottom-6 md:left-0 md:right-0 z-20 flex flex-col items-center gap-3 px-6 text-center max-w-xs mx-auto"
         style={{ animation: "rsvpFadeIn 0.35s ease forwards" }}
       >
         <p
@@ -1630,8 +1630,10 @@ function RsvpZone({
   }
 
   // ── Idle: accept / decline buttons ───────────────────────────────────────
+  // Mobile keeps the buttons in normal flow so they sit directly under the
+  // invitation text; desktop still pins them to the bottom of the card.
   return (
-    <div className="absolute bottom-4 md:bottom-8 left-0 right-0 z-20 flex flex-col items-center gap-3 px-6">
+    <div className="relative w-full mt-7 md:mt-0 md:absolute md:bottom-8 md:left-0 md:right-0 z-20 flex flex-col items-center gap-3 px-6">
       <div className="flex gap-3 flex-wrap justify-center">
         <button
           onClick={() => choose("accepted")}
@@ -2064,7 +2066,9 @@ export default function Postcard({
           ref={contentRef}
           className={cn(
             "relative z-10 flex flex-col items-center text-center px-6 md:px-20 max-w-[880px] w-full",
-            isLiveView && "pb-28 md:pb-36"
+            // Desktop reserves room for the absolutely-positioned RSVP zone;
+            // on mobile that zone is in flow, so no reserved gap is needed.
+            isLiveView && "pb-4 md:pb-36"
           )}
         >
           <p

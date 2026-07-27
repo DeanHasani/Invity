@@ -14,6 +14,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import RefundPolicy from "./pages/RefundPolicy";
 import Pricing from "./pages/Pricing";
+import AboutUs from "./pages/AboutUs";
 import Guests from "./pages/Guests";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/refunds" element={<RefundPolicy />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/about" element={<AboutUs />} />
           <Route path="/guests" element={<Guests />} />
           <Route path="/:id" element={<InvitationView />} />
           <Route path="*" element={<NotFound />} />

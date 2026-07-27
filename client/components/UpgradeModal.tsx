@@ -83,7 +83,7 @@ export function UpgradeModal({
     >
       <div
         className="w-full max-w-sm flex flex-col items-center text-center gap-5 p-8 relative"
-        style={{ background: "#1a0800", border: "2px solid var(--brand-mid, rgba(240,90,40,0.45))" }}
+        style={{ background: "var(--surface, #1a0800)", border: "2px solid rgba(var(--accent-rgb, 240,90,40),0.45)" }}
         onClick={e => e.stopPropagation()}
       >
         <button
@@ -96,7 +96,7 @@ export function UpgradeModal({
         {phase !== "plan" ? (
           <>
             <div className="text-5xl">{phase === "activating" ? "⏳" : "✅"}</div>
-            <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--brand, #F05A28)" }}>
+            <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--accent, #F05A28)" }}>
               {phase === "activating" ? "Activating Pro..." : "Payment received!"}
             </p>
             <p className="text-xs opacity-50 text-white">
@@ -117,7 +117,7 @@ export function UpgradeModal({
         ) : (
           <>
             <div className="space-y-1">
-              <p className="text-3xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--brand, #F05A28)" }}>
+              <p className="text-3xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--accent, #F05A28)" }}>
                 Go Pro
               </p>
               <p className="text-xs opacity-50 text-white">{subtitle}</p>
@@ -126,7 +126,7 @@ export function UpgradeModal({
             <ul className="w-full space-y-2 text-left">
               {PRO_FEATURES.map(f => (
                 <li key={f} className="flex items-start gap-2 text-[13px] text-white/85">
-                  <span style={{ color: "var(--brand, #F05A28)" }}>✔</span>
+                  <span style={{ color: "var(--accent, #F05A28)" }}>✔</span>
                   {f}
                 </li>
               ))}
@@ -142,7 +142,7 @@ export function UpgradeModal({
                   style={{
                     fontFamily: LG_FONT,
                     border: cycle === c
-                      ? "2px solid var(--brand, #F05A28)"
+                      ? "2px solid var(--accent, #F05A28)"
                       : "2px solid rgba(255,255,255,0.15)",
                     background: cycle === c ? "rgba(255,255,255,0.06)" : "transparent",
                     color: cycle === c ? "#fff" : "rgba(255,255,255,0.5)",
@@ -163,7 +163,7 @@ export function UpgradeModal({
                 onClick={handleBuy}
                 disabled={busy}
                 className="w-full py-4 text-lg font-bold uppercase tracking-wider transition-colors disabled:opacity-60"
-                style={{ fontFamily: LG_FONT, background: "var(--brand, #F05A28)", color: "#fff" }}
+                style={{ fontFamily: LG_FONT, background: "var(--accent-fill, #F05A28)", color: "var(--accent-fg, #fff)" }}
               >
                 {busy ? "OPENING..." : `GO PRO — ${price}`}
               </button>

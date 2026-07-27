@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CANVAS_MAP, DESIGN_BG, DecryptedText, isLightColor } from "@/components/Postcard";
 import { InAppBrowserBanner, detectInApp } from "@/components/InAppBrowserBanner";
+import { AppTheme, THEME_COLORS, THEME_ORDER, readStoredTheme, themeVars } from "@/lib/theme";
+import { SiteFooter } from "@/components/SiteFooter";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -115,14 +117,6 @@ const BG_PHRASES = [
 // DatePickerInput — custom calendar styled to the Invity orange palette
 // ─────────────────────────────────────────────────────────────────────────────
 
-type AppTheme = "orange" | "sky" | "teal" | "warmgray";
-const THEME_COLORS: Record<AppTheme, { hex: string; rgb: string }> = {
-  orange:   { hex: "#F05A28", rgb: "240,90,40"   },
-  sky:      { hex: "#0284C7", rgb: "2,132,199"   },
-  teal:     { hex: "#14B8A6", rgb: "20,184,166"  },
-  warmgray: { hex: "#7C6A5E", rgb: "124,106,94"  },
-};
-
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DAY_LABELS  = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
 
@@ -186,9 +180,9 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
       {open && (
         <div
           className="absolute bottom-full left-0 mb-3 z-50 shadow-2xl w-72"
-          style={{ background: "#1a0a00", border: "2px solid rgba(var(--brand-rgb),0.5)", fontFamily: "'Montserrat', sans-serif" }}
+          style={{ background: "var(--surface)", border: "2px solid rgba(var(--accent-rgb),0.5)", fontFamily: "'Montserrat', sans-serif" }}
         >
-          <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(var(--brand-rgb),0.2)" }}>
+          <div className="flex items-center justify-between px-4 pt-4 pb-3" style={{ borderBottom: "1px solid rgba(var(--accent-rgb),0.2)" }}>
             <button
               type="button"
               onClick={() => shiftMonth(-1)}
@@ -211,7 +205,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
           <div className="px-3 py-3">
             <div className="grid grid-cols-7 mb-1">
               {DAY_LABELS.map(d => (
-                <div key={d} className="text-center text-[9px] font-bold tracking-wider pb-2" style={{ color: "rgba(var(--brand-rgb),0.6)" }}>
+                <div key={d} className="text-center text-[9px] font-bold tracking-wider pb-2" style={{ color: "rgba(var(--accent-rgb),0.6)" }}>
                   {d}
                 </div>
               ))}
@@ -232,11 +226,11 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
                     className="aspect-square flex items-center justify-center text-[13px] font-medium transition-all rounded-sm"
                     style={
                       isPast  ? { color: "rgba(255,255,255,0.2)", cursor: "not-allowed" } :
-                      isSel   ? { background: "var(--brand)", color: "#fff", fontWeight: 700 } :
-                      isToday ? { outline: "2px solid var(--brand)", outlineOffset: "-2px", color: "var(--brand)" } :
+                      isSel   ? { background: "var(--accent-fill)", color: "var(--accent-fg)", fontWeight: 700 } :
+                      isToday ? { outline: "2px solid var(--accent)", outlineOffset: "-2px", color: "var(--accent)" } :
                                 { color: "rgba(255,255,255,0.75)" }
                     }
-                    onMouseEnter={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = "rgba(var(--brand-rgb),0.18)"; }}
+                    onMouseEnter={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = "rgba(var(--accent-rgb),0.18)"; }}
                     onMouseLeave={e => { if (!isSel && !isPast) (e.currentTarget as HTMLElement).style.background = ""; }}
                   >
                     {day}
@@ -251,7 +245,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
               type="button"
               onClick={() => { onChange(""); setSelected(null); setOpen(false); }}
               className="w-full py-2.5 text-[11px] uppercase tracking-widest font-bold transition-opacity hover:opacity-60"
-              style={{ borderTop: "1px solid rgba(var(--brand-rgb),0.2)", color: "var(--brand)" }}
+              style={{ borderTop: "1px solid rgba(var(--accent-rgb),0.2)", color: "var(--accent)" }}
             >
               Clear date
             </button>
@@ -569,12 +563,12 @@ function AccountMenu({
       {open && (
         <div
           className="absolute top-full right-0 mt-2 w-56 z-50 flex flex-col"
-          style={{ background: "#1a0800", border: "2px solid var(--brand-mid)" }}
+          style={{ background: "var(--surface)", border: "2px solid rgba(var(--accent-rgb),0.45)" }}
         >
           {/* Email + plan */}
           <div
             className="px-4 py-3 space-y-1.5"
-            style={{ borderBottom: "1px solid var(--brand-dim)" }}
+            style={{ borderBottom: "1px solid rgba(var(--accent-rgb),0.2)" }}
           >
             <div className="text-[10px] uppercase tracking-widest truncate" style={{ color: "rgba(255,255,255,0.3)" }}>
               {email}
@@ -584,7 +578,7 @@ function AccountMenu({
                 className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5"
                 style={
                   isPro
-                    ? { background: "var(--brand)", color: "#fff" }
+                    ? { background: "var(--accent-fill)", color: "var(--accent-fg)" }
                     : { border: "1px solid rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.55)" }
                 }
               >
@@ -621,7 +615,7 @@ function AccountMenu({
                 <button
                   onClick={() => { setOpen(false); onUpgrade(); }}
                   className="px-4 py-3 text-left text-[12px] uppercase tracking-wider hover:bg-white/8 transition-colors w-full"
-                  style={{ fontFamily: LG_FONT, color: "var(--brand)" }}
+                  style={{ fontFamily: LG_FONT, color: "var(--accent)" }}
                 >
                   ⭐ Upgrade to Pro
                 </button>
@@ -692,7 +686,7 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
     >
       <div
         className="w-full max-w-sm flex flex-col items-center text-center gap-6 p-8 relative"
-        style={{ background: "#1a0800", border: "2px solid var(--brand-mid)" }}
+        style={{ background: "var(--surface)", border: "2px solid rgba(var(--accent-rgb),0.45)" }}
         onClick={e => e.stopPropagation()}
       >
         <button
@@ -703,7 +697,7 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="space-y-1">
-          <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--brand)" }}>
+          <p className="text-2xl uppercase" style={{ fontFamily: LG_FONT, color: "var(--accent)" }}>
             Sign In to Continue
           </p>
           <p className="text-xs opacity-50">
@@ -818,12 +812,9 @@ export default function Index() {
   const [rateLimited, setRateLimited] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const { isPro, currentPeriodEnd, cancelScheduled } = useSubscription();
-  const [theme, setTheme] = useState<AppTheme>(() =>
-    (localStorage.getItem("invity_theme") as AppTheme) ?? "orange"
-  );
-  const { hex: BRAND, rgb: B_RGB } = THEME_COLORS[theme];
-  const B_MID = `rgba(${B_RGB},0.45)`;
-  const B_DIM = `rgba(${B_RGB},0.2)`;
+  const [theme, setTheme] = useState<AppTheme>(readStoredTheme);
+  const { hex: BRAND } = THEME_COLORS[theme];
+  const THEME_VARS = themeVars(theme);
   const [effectPreviewKey, setEffectPreviewKey] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -1056,7 +1047,7 @@ export default function Index() {
       className="h-screen w-screen flex flex-col items-center justify-center text-center p-8 gap-6 select-none"
       style={{
         background: BRAND, color: "#fff", fontFamily: "'Montserrat', sans-serif",
-        "--brand": BRAND, "--brand-mid": B_MID, "--brand-dim": B_DIM,
+        ...THEME_VARS,
       } as React.CSSProperties}
     >
       <div className="text-7xl">⏰</div>
@@ -1113,7 +1104,7 @@ export default function Index() {
         fontFamily: "'Montserrat', sans-serif",
         backgroundColor: step === 2 ? (DESIGN_BG[formData.designId] ?? BRAND) : BRAND,
         transition: "background-color 0.5s ease",
-        "--brand": BRAND, "--brand-mid": B_MID, "--brand-dim": B_DIM, "--brand-rgb": B_RGB,
+        ...THEME_VARS,
       } as React.CSSProperties}
     >
       <style>{`.brand-hover-text:hover { color: var(--brand) !important; }`}</style>
@@ -1139,10 +1130,13 @@ export default function Index() {
         <div className="flex flex-col pointer-events-auto gap-1.5">
           <h1
             className="text-2xl md:text-4xl tracking-tighter leading-none uppercase opacity-90 hover:opacity-100 transition-opacity"
-            style={{ fontFamily: LG_FONT, cursor: step === 1 ? "default" : "pointer" }}
+            style={{ fontFamily: LG_FONT, cursor: "pointer" }}
+            title={step === 1 ? "Start over" : "Back to start"}
             onClick={() => {
-              if (step === 1) return;
-              if (step === 5) { resetBuilder(); return; }
+              // On step 1 there is nowhere to navigate, so the logo doubles as a
+              // "start fresh" control — wipe any half-typed draft and re-roll the
+              // background phrases rather than sitting inert.
+              if (step === 1 || step === 5) { resetBuilder(); return; }
               gsap.killTweensOf(containerRef.current);
               gsap.to(containerRef.current, {
                 opacity: 0, x: 30, duration: 0.22, ease: "power2.in",
@@ -1156,9 +1150,10 @@ export default function Index() {
             INVITY
           </h1>
           <div className="flex gap-[7px]">
-            {(["orange", "sky", "teal", "warmgray"] as const).map(t => (
+            {THEME_ORDER.map(t => (
               <button
                 key={t}
+                aria-label={`${t} theme`}
                 onClick={() => { setTheme(t); localStorage.setItem("invity_theme", t); }}
                 style={{
                   width: "15px", height: "15px",
@@ -1626,43 +1621,7 @@ export default function Index() {
             </button>
           </div>
         )}
-        <div className="flex items-center justify-center gap-3 py-2.5">
-          <Link
-            to="/pricing"
-            className="text-[11px] uppercase tracking-widest"
-            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
-          >
-            Pricing
-          </Link>
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
-          <Link
-            to="/privacy"
-            className="text-[11px] uppercase tracking-widest"
-            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
-          >
-            Privacy
-          </Link>
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
-          <Link
-            to="/terms"
-            className="text-[11px] uppercase tracking-widest"
-            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
-          >
-            Terms
-          </Link>
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
-          <Link
-            to="/refunds"
-            className="text-[11px] uppercase tracking-widest"
-            style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.65)" }}
-          >
-            Refunds
-          </Link>
-          <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 10 }}>·</span>
-          <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.5)", fontFamily: "'Montserrat', sans-serif" }}>
-            © {new Date().getFullYear()} Invity
-          </span>
-        </div>
+        <SiteFooter variant="compact" />
       </div>
 
       {/* Decorative BG text */}
@@ -1674,51 +1633,7 @@ export default function Index() {
       </div>
 
       {/* Footer — desktop only, mobile uses the bottom nav bar */}
-      <div className="hidden md:flex fixed bottom-4 left-0 right-0 z-20 items-center justify-center gap-5 px-4 pointer-events-none select-none">
-        <Link
-          to="/pricing"
-          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
-          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-        >
-          Pricing
-        </Link>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
-        <Link
-          to="/privacy"
-          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
-          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-        >
-          Privacy Policy
-        </Link>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
-        <Link
-          to="/terms"
-          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
-          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-        >
-          Terms
-        </Link>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
-        <Link
-          to="/refunds"
-          className="pointer-events-auto text-[15px] uppercase tracking-widest transition-colors"
-          style={{ fontFamily: LG_FONT, color: "rgba(255,255,255,0.75)" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#fff")}
-          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-        >
-          Refunds
-        </Link>
-        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>·</span>
-        <span className="text-[13px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.75)", fontFamily: "'Montserrat', sans-serif" }}>
-          © {new Date().getFullYear()} Invity
-        </span>
-      </div>
+      <SiteFooter variant="desktop" />
 
 
       {/* Google sign-in modal */}

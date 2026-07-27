@@ -166,8 +166,10 @@ export default function InvitationView() {
 
   const remainingHours = Math.max(0, (expiresAt - Date.now()) / 3_600_000);
 
+  // 100dvh, not 100vh: on mobile 100vh includes the area behind the browser
+  // chrome, which pushed the RSVP buttons below the visible fold.
   return (
-    <div className="w-screen h-screen overflow-hidden">
+    <div className="w-screen h-[100dvh] overflow-hidden">
       <Postcard
         invitation={invitation!}
         isLiveView={true}
