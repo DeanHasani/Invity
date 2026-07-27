@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pricing | Invity Pro - $2.99/month or $20/year</title>
+  <title>Pricing | Invity Pro | $2.99/month or $20/year</title>
   <meta name="description" content="Invity is a free online invitation card maker. Invity Pro ($2.99/month or $20/year) adds unlimited invitations, 30-day links, premium designs, and guest lists with CSV export." />
   <link rel="canonical" href="https://www.invity.cards/pricing" />
   <link rel="icon" href="/favicon.ico" />
@@ -18,10 +18,41 @@
     "@type": "Product",
     "name": "Invity Pro",
     "description": "Pro subscription for the Invity digital invitation maker: unlimited invitation cards, 30-day links, premium designs and effects, guest lists with CSV export.",
+    "image": "https://www.invity.cards/og-image.png",
     "brand": { "@type": "Brand", "name": "Invity" },
     "offers": [
-      { "@type": "Offer", "name": "Monthly", "price": "2.99", "priceCurrency": "USD", "url": "https://www.invity.cards/pricing" },
-      { "@type": "Offer", "name": "Yearly", "price": "20.00", "priceCurrency": "USD", "url": "https://www.invity.cards/pricing" }
+      {
+        "@type": "Offer",
+        "name": "Monthly",
+        "price": "2.99",
+        "priceCurrency": "USD",
+        "url": "https://www.invity.cards/pricing",
+        "availability": "https://schema.org/InStock",
+        "hasMerchantReturnPolicy": {
+          "@type": "MerchantReturnPolicy",
+          "applicableCountry": "US",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+          "merchantReturnDays": 14,
+          "returnFees": "https://schema.org/FreeReturn",
+          "merchantReturnLink": "https://www.invity.cards/refunds"
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "Yearly",
+        "price": "20.00",
+        "priceCurrency": "USD",
+        "url": "https://www.invity.cards/pricing",
+        "availability": "https://schema.org/InStock",
+        "hasMerchantReturnPolicy": {
+          "@type": "MerchantReturnPolicy",
+          "applicableCountry": "US",
+          "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+          "merchantReturnDays": 14,
+          "returnFees": "https://schema.org/FreeReturn",
+          "merchantReturnLink": "https://www.invity.cards/refunds"
+        }
+      }
     ]
   }
   </script>
