@@ -73,6 +73,17 @@ const FONTS = [
   { id: "griffy",    label: "Griffy",    family: "'Griffy', cursive" },
 ];
 
+/**
+ * Perceived luminance 0–1, same weighting as isLightColor but returned raw so
+ * callers can pick their own threshold.
+ */
+function fontLuminance(hex: string): number {
+  const h = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 1;
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
 const COLOR_SWATCHES = [
   "#ffffff", "#f5f0e8", "#1a1a1a", "#c9a84c",
   "#22d3ee", "#60a5fa", "#ff00ff", "#c084fc",
@@ -1095,6 +1106,18 @@ export default function Index() {
   const INPUT_CLS = "bg-transparent border-white/40 border-t-0 border-x-0 border-b-2 rounded-none px-0 placeholder:text-white/20 focus-visible:ring-0 focus-visible:border-white transition-all text-white";
 
   const selectedFont = FONTS.find(f => f.id === formData.fontId) ?? FONTS[0];
+
+  // The preview panels are a translucent white wash over the page. On the black
+  // theme that lands barely above the background, so a near-black title colour
+  // disappears into it. Flip those panels to a light backdrop instead — the
+  // threshold only trips for genuinely dark picks, so vivid colours like magenta
+  // keep the dark panel they read best against.
+  const previewOnLight = fontLuminance(formData.fontColor ?? "#ffffff") < 0.35;
+  const PREVIEW_PANEL_CLS = cn(
+    "border-2 px-4 pt-4 pb-4 space-y-3",
+    previewOnLight ? "border-white/60" : "border-white/30 bg-white/5"
+  );
+  const PREVIEW_PANEL_STYLE = previewOnLight ? { background: "rgba(255,255,255,0.92)" } : undefined;
   const ActiveCanvas = step === 2 ? (CANVAS_MAP[formData.designId] ?? null) : null;
 
   return (
@@ -1365,7 +1388,7 @@ export default function Index() {
               </div>
 
               {/* Color picker + preview — always visible below the grid */}
-              <div className="border-2 border-white/30 px-4 pt-4 pb-4 space-y-3 bg-white/5">
+              <div className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
                 <p
                   className="uppercase text-center leading-none"
                   style={{
@@ -1390,12 +1413,17 @@ export default function Index() {
                         height: 28,
                         outline: "2px solid rgba(0,0,0,0.55)",
                         outlineOffset: "-1px",
-                        ...(formData.fontColor === c ? { "--tw-ring-offset-color": BRAND } : {}),
+                        // The ring offset has to match whatever the panel is
+                        // actually painted with, or the selected swatch grows a
+                        // stray coloured halo.
+                        ...(formData.fontColor === c
+                          ? { "--tw-ring-offset-color": previewOnLight ? "#ffffff" : BRAND }
+                          : {}),
                       } as React.CSSProperties}
                       className={cn(
                         "transition-all duration-200",
                         formData.fontColor === c
-                          ? "ring-2 ring-white ring-offset-2 scale-110"
+                          ? cn("ring-2 ring-offset-2 scale-110", previewOnLight ? "ring-black" : "ring-white")
                           : "opacity-80 hover:opacity-100 hover:scale-105"
                       )}
                     />
@@ -1450,7 +1478,7 @@ export default function Index() {
               {(() => {
                 const selEffect = EFFECTS.find(e => e.id === formData.effectId) ?? EFFECTS[0];
                 return (
-                  <div className="border-2 border-white/30 px-4 pt-4 pb-4 space-y-3 bg-white/5">
+                  <div className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
                     <TitleEffectPreview
                       key={`${selEffect.id}-${effectPreviewKey}`}
                       title={formData.title}
@@ -1459,7 +1487,10 @@ export default function Index() {
                       effectId={selEffect.id}
                       startDelay={200}
                     />
-                    <p className="text-[11px] uppercase tracking-wider text-center opacity-60 font-medium">
+                    <p className={cn(
+                      "text-[11px] uppercase tracking-wider text-center opacity-60 font-medium",
+                      previewOnLight && "text-[#1a1a1a]"
+                    )}>
                       {selEffect.desc}
                     </p>
                   </div>
@@ -1573,7 +1604,9 @@ export default function Index() {
                 <Link
                   to={`/${createdInvitation.id}`}
                   target="_blank"
-                  className="bg-black text-white py-5 flex items-center justify-center hover:bg-black/85 transition-colors text-lg uppercase tracking-wider"
+                  /* border-2 so the black fill still reads as a button on the
+                     black theme, where it would otherwise merge into the page */
+                  className="bg-black text-white border-2 border-white py-5 flex items-center justify-center hover:bg-black/85 transition-colors text-lg uppercase tracking-wider"
                   style={{ fontFamily: LG_FONT }}
                 >
                   PREVIEW
