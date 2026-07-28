@@ -52,16 +52,30 @@ Deno.serve(async (req) => {
   });
 
   if (!res.ok) {
-    const detail = await res.text();
-    console.error(`portal session failed [${PADDLE_ENV} ${PADDLE_API_BASE}] ${res.status}:`, detail);
-    // paddle_env/status are not secrets, and returning them is the difference
-    // between "it's broken" and "the key and the env don't match".
+    const raw = await res.text();
+    console.error(`portal session failed [${PADDLE_ENV} ${PADDLE_API_BASE}] ${res.status}:`, raw);
+
+    // Paddle's error body carries the actual reason (e.g. forbidden vs
+    // entity_not_found), which is the difference between a permission problem
+    // and the customer id belonging to a different Paddle environment.
+    let paddleCode: string | null = null;
+    let paddleDetail: string | null = null;
+    try {
+      const parsed = JSON.parse(raw);
+      paddleCode = parsed?.error?.code ?? null;
+      paddleDetail = parsed?.error?.detail ?? null;
+    } catch { /* non-JSON body */ }
+
     return json(
       {
         error: "portal_failed",
         paddle_status: res.status,
         paddle_env: PADDLE_ENV,
         paddle_env_recognised: PADDLE_ENV_RECOGNISED,
+        paddle_code: paddleCode,
+        paddle_detail: paddleDetail,
+        // Confirms which account/environment the stored ids came from.
+        customer_id: sub.paddle_customer_id,
       },
       502,
     );
