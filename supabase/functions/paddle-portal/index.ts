@@ -60,10 +60,13 @@ Deno.serve(async (req) => {
     // and the customer id belonging to a different Paddle environment.
     let paddleCode: string | null = null;
     let paddleDetail: string | null = null;
+    let requestId: string | null = null;
     try {
       const parsed = JSON.parse(raw);
       paddleCode = parsed?.error?.code ?? null;
       paddleDetail = parsed?.error?.detail ?? null;
+      // Paddle Support asks for this verbatim when triaging a 403.
+      requestId = parsed?.meta?.request_id ?? parsed?.error?.request_id ?? null;
     } catch { /* non-JSON body */ }
 
     return json(
@@ -74,6 +77,7 @@ Deno.serve(async (req) => {
         paddle_env_recognised: PADDLE_ENV_RECOGNISED,
         paddle_code: paddleCode,
         paddle_detail: paddleDetail,
+        paddle_request_id: requestId,
         // Confirms which account/environment the stored ids came from.
         customer_id: sub.paddle_customer_id,
       },
