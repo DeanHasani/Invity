@@ -1,6 +1,19 @@
 // Paddle API + webhook helpers for edge functions (Deno).
 
-const PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY") ?? "";
+const RAW_PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY") ?? "";
+
+// A trailing \r or \n (very easy to introduce setting secrets from a CRLF file
+// on Windows) or accidental surrounding quotes make the Authorization header
+// invalid — Paddle rejects it with 403 authentication_malformed, which reads
+// like a permissions problem rather than a whitespace one.
+const PADDLE_API_KEY = RAW_PADDLE_API_KEY.trim().replace(/^["']|["']$/g, "");
+
+if (PADDLE_API_KEY !== RAW_PADDLE_API_KEY) {
+  console.warn(
+    "paddle: PADDLE_API_KEY had surrounding whitespace/quotes and was normalised — " +
+      "re-set the secret with a clean value.",
+  );
+}
 
 const RAW_PADDLE_ENV = Deno.env.get("PADDLE_ENV");
 // Normalised before comparison: the old strict `=== "production"` check meant a
