@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { FloatingPhrases } from "@/components/FloatingPhrases";
 import { useSubscription, awaitProActivation } from "@/hooks/useSubscription";
 import { supabase, signInWithGoogle } from "@/lib/supabase";
-import { openProCheckout, type BillingCycle } from "@/lib/paddle";
+import { openProCheckout, openBillingPortal, type BillingCycle } from "@/lib/paddle";
 import { PRICE_MONTHLY_LABEL, PRICE_YEARLY_LABEL } from "@shared/premium";
 import { SiteFooter } from "@/components/SiteFooter";
 import { THEME_COLORS, readStoredTheme, themeVars } from "@/lib/theme";
@@ -72,15 +72,9 @@ export default function Pricing() {
 
   const openPortal = async () => {
     setPortalBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("paddle-portal", { body: {} });
-      if (error || !data?.url) throw error ?? new Error("no url");
-      window.open(data.url, "_blank", "noopener");
-    } catch {
-      toast.error("Couldn't open the billing portal. Try again.");
-    } finally {
-      setPortalBusy(false);
-    }
+    const message = await openBillingPortal();
+    if (message) toast.error(message);
+    setPortalBusy(false);
   };
 
   return (

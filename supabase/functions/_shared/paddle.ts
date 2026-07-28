@@ -1,10 +1,30 @@
 // Paddle API + webhook helpers for edge functions (Deno).
 
-const PADDLE_ENV = Deno.env.get("PADDLE_ENV") ?? "sandbox";
 const PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY") ?? "";
+
+const RAW_PADDLE_ENV = Deno.env.get("PADDLE_ENV");
+// Normalised before comparison: the old strict `=== "production"` check meant a
+// stray space or capital letter silently routed live customers at the sandbox
+// API, where their customer/subscription IDs don't exist. Failures there look
+// like a broken feature, not a misconfiguration, so they're hard to trace.
+const NORMALISED_ENV = (RAW_PADDLE_ENV ?? "").trim().toLowerCase();
+
+export const PADDLE_ENV: "sandbox" | "production" =
+  NORMALISED_ENV === "production" ? "production" : "sandbox";
+
+/** False when PADDLE_ENV is set to something we don't recognise — callers should surface this. */
+export const PADDLE_ENV_RECOGNISED =
+  NORMALISED_ENV === "production" || NORMALISED_ENV === "sandbox" || RAW_PADDLE_ENV === undefined;
 
 export const PADDLE_API_BASE =
   PADDLE_ENV === "production" ? "https://api.paddle.com" : "https://sandbox-api.paddle.com";
+
+if (!PADDLE_ENV_RECOGNISED) {
+  console.error(
+    `paddle: PADDLE_ENV=${JSON.stringify(RAW_PADDLE_ENV)} is not "sandbox" or "production" — ` +
+      `falling back to ${PADDLE_API_BASE}`,
+  );
+}
 
 export function paddleConfigured(): boolean {
   return PADDLE_API_KEY.length > 0;

@@ -1,4 +1,5 @@
 import { initializePaddle, type Paddle } from "@paddle/paddle-js";
+import { supabase } from "@/lib/supabase";
 
 let paddlePromise: Promise<Paddle | undefined> | null = null;
 let onCheckoutCompleted: (() => void) | null = null;
@@ -55,4 +56,49 @@ export async function openProCheckout(
     customData: { supabase_user_id: user.id, user_email: user.email },
     settings: { displayMode: "overlay", theme: "dark" },
   });
+}
+
+/** Human-readable reason for a failed portal open, for toasting to the user. */
+const PORTAL_MESSAGES: Record<string, string> = {
+  no_subscription: "We couldn't find a subscription on this account.",
+  no_customer_id:  "Your subscription is still finishing setup — try again in a minute.",
+  portal_failed:   "Paddle couldn't open the billing portal. Please email cardsinvity@gmail.com.",
+};
+
+/**
+ * Opens the Paddle customer portal for the signed-in user.
+ * Returns a message to show on failure, or null on success.
+ */
+export async function openBillingPortal(): Promise<string | null> {
+  // Opened synchronously, inside the click handler. Browsers (iOS Safari in
+  // particular) block window.open once an await has broken the user-gesture
+  // chain — which presents as the button doing nothing at all, with no error.
+  const win = window.open("", "_blank");
+  if (win) win.opener = null;
+
+  const fail = (reason: string, detail?: unknown) => {
+    console.error(`[billing-portal] ${reason}`, detail ?? "");
+    win?.close();
+    return PORTAL_MESSAGES[reason] ?? "Couldn't open the billing portal. Try again.";
+  };
+
+  try {
+    const { data, error } = await supabase.functions.invoke("paddle-portal", { body: {} });
+
+    if (error) {
+      // supabase-js buries the function's JSON response inside error.context
+      let body: any = null;
+      try { body = await (error as any)?.context?.json?.(); } catch { /* not JSON */ }
+      return fail(body?.error ?? "invoke_failed", { error, body });
+    }
+    if (!data?.url) return fail("no_url", data);
+
+    // Popup blocked despite the synchronous open → fall back to the same tab
+    // rather than silently doing nothing.
+    if (win) win.location.href = data.url;
+    else window.location.href = data.url;
+    return null;
+  } catch (e) {
+    return fail("exception", e);
+  }
 }

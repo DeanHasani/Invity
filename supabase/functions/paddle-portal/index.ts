@@ -1,7 +1,7 @@
 // Creates a Paddle customer-portal session for the signed-in user so they can
 // manage/cancel their subscription without an email-OTP login.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { paddleFetch } from "../_shared/paddle.ts";
+import { paddleFetch, PADDLE_ENV, PADDLE_API_BASE, PADDLE_ENV_RECOGNISED } from "../_shared/paddle.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -39,14 +39,32 @@ Deno.serve(async (req) => {
 
   if (!sub) return json({ error: "no_subscription" }, 404);
 
+  // Without a customer id the request below would POST to /customers/null/...,
+  // which returns a confusing 404 that looks identical to an environment mismatch.
+  if (!sub.paddle_customer_id) {
+    console.error(`portal: user ${user.id} has a subscription row with no paddle_customer_id`);
+    return json({ error: "no_customer_id" }, 409);
+  }
+
   const res = await paddleFetch(`/customers/${sub.paddle_customer_id}/portal-sessions`, {
     method: "POST",
     body: JSON.stringify({ subscription_ids: [sub.paddle_subscription_id] }),
   });
 
   if (!res.ok) {
-    console.error("portal session failed:", await res.text());
-    return json({ error: "portal_failed" }, 502);
+    const detail = await res.text();
+    console.error(`portal session failed [${PADDLE_ENV} ${PADDLE_API_BASE}] ${res.status}:`, detail);
+    // paddle_env/status are not secrets, and returning them is the difference
+    // between "it's broken" and "the key and the env don't match".
+    return json(
+      {
+        error: "portal_failed",
+        paddle_status: res.status,
+        paddle_env: PADDLE_ENV,
+        paddle_env_recognised: PADDLE_ENV_RECOGNISED,
+      },
+      502,
+    );
   }
 
   const { data } = await res.json();

@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { Check, Copy, Link as LinkIcon, Lock } from "lucide-react";
 import { PRO_DESIGN_IDS, PRO_EFFECT_IDS, ALL_DESIGN_IDS } from "@shared/premium";
 import { UpgradeModal } from "@/components/UpgradeModal";
+import { openBillingPortal } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -513,15 +514,9 @@ function AccountMenu({
 
   const openPortal = async () => {
     setPortalBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("paddle-portal", { body: {} });
-      if (error || !data?.url) throw error ?? new Error("no url");
-      window.open(data.url, "_blank", "noopener");
-    } catch {
-      toast.error("Couldn't open the billing portal. Try again.");
-    } finally {
-      setPortalBusy(false);
-    }
+    const message = await openBillingPortal();
+    if (message) toast.error(message);
+    setPortalBusy(false);
   };
 
   const fill = "rgba(255,255,255,0.85)";
