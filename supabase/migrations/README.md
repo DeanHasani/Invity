@@ -11,6 +11,8 @@ Run. Apply files in numeric order, once each. Record what you've applied here:
 | 0001_baseline.sql | (no-op — documents pre-existing tables) |
 | 0002_billing.sql | ☐ |
 | 0003_rls_lockdown.sql | ☐ **breaking — apply only after the SPA deploy that routes creation/RSVP through edge functions is live** |
+| 0004_invitation_public_rpc.sql | ☐ |
+| 0005_retention_and_stats.sql | ☐ adds `daily_stats` + nightly `pg_cron` cleanup; re-runnable |
 
 `0001` uses `IF NOT EXISTS` throughout, so it does nothing on the production
 database; it exists so a fresh environment can be bootstrapped and so the schema

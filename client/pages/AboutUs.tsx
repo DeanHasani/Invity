@@ -61,7 +61,7 @@ export default function AboutUs() {
           </Block>
 
           <Block title="Free and Pro">
-            The free tier gives you two invitation links per day, and each link stays live for 8 hours.{" "}
+            The free tier gives you two invitation links per day, and each link stays live for 5 hours.{" "}
             <Link to="/pricing" className="underline underline-offset-2">Invity Pro</Link> removes the
             daily limit, keeps links alive for 30 days, and unlocks the premium designs and effects
             plus CSV export for your guest lists. Pro is $2.99/month or $20/year, and it's backed by a{" "}

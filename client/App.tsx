@@ -16,6 +16,7 @@ import RefundPolicy from "./pages/RefundPolicy";
 import Pricing from "./pages/Pricing";
 import AboutUs from "./pages/AboutUs";
 import Guests from "./pages/Guests";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -37,6 +39,7 @@ const App = () => (
           <Route path="/:id" element={<InvitationView />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

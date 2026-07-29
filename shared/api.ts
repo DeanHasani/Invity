@@ -37,7 +37,14 @@ export interface Invitation {
   fontColor?: string;
 }
 
-export type CreateInvitationRequest = Omit<Invitation, "id">;
+export type CreateInvitationRequest = Omit<Invitation, "id"> & {
+  /**
+   * Requested link lifetime, an id from EXPIRY_OPTIONS. Not stored on the
+   * invitation — it only decides expires_at at creation time, and the edge
+   * function clamps it to what the caller's plan allows.
+   */
+  expiryId?: string;
+};
 
 export interface InvitationResponse {
   invitation: Invitation;

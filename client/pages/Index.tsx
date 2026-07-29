@@ -7,7 +7,10 @@ import { getCreatorId } from "@/lib/identity";
 import gsap from "gsap";
 import { Link } from "react-router-dom";
 import { Check, Copy, Link as LinkIcon, Lock } from "lucide-react";
-import { PRO_DESIGN_IDS, PRO_EFFECT_IDS, ALL_DESIGN_IDS } from "@shared/premium";
+import {
+  PRO_DESIGN_IDS, PRO_EFFECT_IDS, ALL_DESIGN_IDS,
+  EXPIRY_OPTIONS, FREE_EXPIRY_ID, PRO_DEFAULT_EXPIRY_ID,
+} from "@shared/premium";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { openBillingPortal } from "@/lib/paddle";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -74,15 +77,65 @@ const FONTS = [
   { id: "griffy",    label: "Griffy",    family: "'Griffy', cursive" },
 ];
 
-/**
- * Perceived luminance 0–1, same weighting as isLightColor but returned raw so
- * callers can pick their own threshold.
- */
-function fontLuminance(hex: string): number {
+// ── Preview panel readability ────────────────────────────────────────────────
+// The step 3/4 preview panels are `bg-white/5` over the page background. Whether
+// a chosen title colour survives that depends on the theme, so the decision has
+// to be a real contrast measurement rather than a luminance guess: black text
+// scores 5.42:1 on orange (fine) but 1.04:1 on the black theme (invisible), and
+// warmgray fails at 3.75:1 too — so "only on the black theme" would be wrong.
+
+function toRgb(hex: string): [number, number, number] | null {
   const h = hex.replace("#", "");
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) return 1;
-  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+/** WCAG relative luminance. */
+function relLuminance([r, g, b]: [number, number, number]): number {
+  const f = (c: number) => {
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
+function contrastRatio(a: [number, number, number], b: [number, number, number]): number {
+  const [hi, lo] = [relLuminance(a), relLuminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** The default panel's painted colour: 5% white composited over the theme. */
+function darkPanelColor(themeHex: string): [number, number, number] {
+  const bg = toRgb(themeHex) ?? [0, 0, 0];
+  return bg.map(c => Math.round(c * 0.95 + 255 * 0.05)) as [number, number, number];
+}
+
+/** The light fallback panel: rgba(255,255,255,0.92) over the theme. */
+function lightPanelColor(themeHex: string): [number, number, number] {
+  const bg = toRgb(themeHex) ?? [0, 0, 0];
+  return bg.map(c => Math.round(c * 0.08 + 255 * 0.92)) as [number, number, number];
+}
+
+/**
+ * Flip to the light panel only in the one case that's genuinely invisible: a
+ * near-black title on a near-black panel.
+ *
+ * A general contrast test was tried first and rejected — mid-tone swatches
+ * (gold, magenta, rose) score below every sensible threshold against mid-tone
+ * panels too, so it fired on all five themes and made the panel strobe as you
+ * clicked through colours. It also over-reaches: the invitation itself renders
+ * on the step-2 design background, not the theme background, so the panel isn't
+ * simulating final contrast anyway — it's just showing your colour choice.
+ */
+const NEAR_BLACK = 0.05; // relative luminance
+
+function shouldUseLightPanel(fontHex: string, themeHex: string): boolean {
+  const font = toRgb(fontHex);
+  if (!font) return false;
+  return (
+    relLuminance(darkPanelColor(themeHex)) < NEAR_BLACK &&
+    relLuminance(font) < NEAR_BLACK
+  );
 }
 
 const COLOR_SWATCHES = [
@@ -848,7 +901,7 @@ export default function Index() {
         if (event === "SIGNED_OUT") {
           setStep(1);
           setCreatedInvitation(null);
-          setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
+          setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff", expiryId: PRO_DEFAULT_EXPIRY_ID });
         }
       }
     });
@@ -881,6 +934,7 @@ export default function Index() {
     effectId:  "static",
     fontId:    "funky",
     fontColor: "#ffffff",
+    expiryId:  PRO_DEFAULT_EXPIRY_ID,
   });
 
   useEffect(() => { randomizePhrases(); }, []);
@@ -1041,7 +1095,7 @@ export default function Index() {
         setCreatedInvitation(null);
         setCreatedExpiresAt(null);
         randomizePhrases();
-        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff" });
+        setFormData({ title: "", message: "", date: "", location: "", designId: "minimal", effectId: "static", fontId: "funky", fontColor: "#ffffff", expiryId: PRO_DEFAULT_EXPIRY_ID });
         gsap.fromTo(containerRef.current, { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.28, ease: "power2.out" });
       },
     });
@@ -1102,12 +1156,10 @@ export default function Index() {
 
   const selectedFont = FONTS.find(f => f.id === formData.fontId) ?? FONTS[0];
 
-  // The preview panels are a translucent white wash over the page. On the black
-  // theme that lands barely above the background, so a near-black title colour
-  // disappears into it. Flip those panels to a light backdrop instead — the
-  // threshold only trips for genuinely dark picks, so vivid colours like magenta
-  // keep the dark panel they read best against.
-  const previewOnLight = fontLuminance(formData.fontColor ?? "#ffffff") < 0.35;
+  // Flip the preview panel to a light backdrop only when the chosen title colour
+  // genuinely can't be read on this theme's panel. Orange/sky/teal keep the dark
+  // panel for every swatch; warmgray and black flip for dark picks.
+  const previewOnLight = shouldUseLightPanel(formData.fontColor ?? "#ffffff", BRAND);
   const PREVIEW_PANEL_CLS = cn(
     "border-2 px-4 pt-4 pb-4 space-y-3",
     previewOnLight ? "border-white/60" : "border-white/30 bg-white/5"
@@ -1308,6 +1360,43 @@ export default function Index() {
                     {...field("location")}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-widest opacity-75">
+                  Link expires after
+                </label>
+                <select
+                  value={isPro ? formData.expiryId : FREE_EXPIRY_ID}
+                  disabled={!isPro}
+                  onChange={e => setFormData(f => ({ ...f, expiryId: e.target.value }))}
+                  className={cn(
+                    INPUT_CLS,
+                    "text-base py-4 h-auto w-full appearance-none cursor-pointer",
+                    !isPro && "opacity-50 cursor-not-allowed"
+                  )}
+                  style={{ colorScheme: "dark" }}
+                >
+                  {EXPIRY_OPTIONS.map(o => (
+                    <option
+                      key={o.id}
+                      value={o.id}
+                      disabled={o.pro && !isPro}
+                      style={{ color: "#111", background: "#fff" }}
+                    >
+                      {o.label}{o.pro && !isPro ? " — Pro" : ""}
+                    </option>
+                  ))}
+                </select>
+                {!isPro && (
+                  <button
+                    type="button"
+                    onClick={() => setShowUpgrade(true)}
+                    className="text-[11px] opacity-60 hover:opacity-100 transition-opacity text-left underline underline-offset-2"
+                  >
+                    Choose how long your link lasts with Pro
+                  </button>
+                )}
               </div>
 
               <p className="text-[11px] opacity-40 font-medium tracking-wide">* Required fields</p>

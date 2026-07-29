@@ -55,7 +55,7 @@ export default function PrivacyPolicy() {
           </Block>
 
           <Block title="Data retention">
-            Invitation links expire automatically — after 8 hours on the free tier, or 30 days for Pro subscribers. Your account data (email, creation history, and subscription status if you're a Pro subscriber) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database, cancels any active subscription, and signs you out.
+            Invitation links expire automatically — after 5 hours on the free tier, or 30 days for Pro subscribers. Your account data (email, creation history, and subscription status if you're a Pro subscriber) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database, cancels any active subscription, and signs you out.
           </Block>
 
           <Block title="Cookies & storage">

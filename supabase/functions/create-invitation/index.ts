@@ -2,8 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { nanoid } from "https://esm.sh/nanoid@5";
 import {
   ALL_DESIGN_IDS, ALL_EFFECT_IDS, PRO_DESIGN_IDS, PRO_EFFECT_IDS,
-  FREE_DAILY_LIMIT, PRO_DAILY_ABUSE_CAP, FREE_EXPIRY_MS, PRO_EXPIRY_MS,
-  isProStatus,
+  FREE_DAILY_LIMIT, PRO_DAILY_ABUSE_CAP, FREE_EXPIRY_MS,
+  isProStatus, resolveExpiryMs,
 } from "../_shared/premium.ts";
 import { paddleConfigured, paddleFetch } from "../_shared/paddle.ts";
 
@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
   const date      = str(body.date, 60) || null;
   const location  = str(body.location, 200) || null;
   const creatorId = str(body.creatorId, 80) || null;
+  const expiryId  = str(body.expiryId, 10) || null;
 
   if (
     !title || !message ||
@@ -127,7 +128,9 @@ Deno.serve(async (req) => {
 
   // ── Create ──────────────────────────────────────────────────────────────────
   const id = nanoid(10);
-  const expiresAt = new Date(Date.now() + (isPro ? PRO_EXPIRY_MS : FREE_EXPIRY_MS)).toISOString();
+  // The builder's dropdown is UI only. resolveExpiryMs clamps to what the plan
+  // allows, so a free account sending "30d" still gets the free lifetime.
+  const expiresAt = new Date(Date.now() + resolveExpiryMs(expiryId, isPro)).toISOString();
 
   const { data: row, error: insertError } = await supabase
     .from("invitations")
@@ -153,7 +156,13 @@ Deno.serve(async (req) => {
     return json({ error: "create_failed" }, 500);
   }
 
-  await supabase.from("creation_log").insert({ user_email: userEmail, creator_id: creatorId });
+  // was_pro is recorded here so the nightly rollup can split free/pro accurately
+  // — joining to subscriptions later would report today's plan, not this one.
+  await supabase.from("creation_log").insert({
+    user_email: userEmail,
+    creator_id: creatorId,
+    was_pro:    isPro,
+  });
 
   return json({
     invitation: {

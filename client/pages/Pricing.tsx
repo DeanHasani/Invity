@@ -13,7 +13,7 @@ const LG_FONT = "'Luckiest Guy', cursive";
 
 const ROWS: Array<{ label: string; free: string; pro: string }> = [
   { label: "Invitations per day", free: "2",       pro: "Unlimited" },
-  { label: "Link lifetime",       free: "8 hours", pro: "30 days" },
+  { label: "Link lifetime",       free: "5 hours", pro: "30 days" },
   { label: "Designs",             free: "8 core",  pro: "All 12" },
   { label: "Title effects",       free: "4 core",  pro: "All 7" },
   { label: "RSVP email alerts",   free: "✔",       pro: "✔" },

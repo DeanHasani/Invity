@@ -9,7 +9,7 @@ const LG_FONT = "'Luckiest Guy', cursive";
 
 const PRO_FEATURES = [
   "Unlimited invitations",
-  "Links last 30 days (not 8 hours)",
+  "Links last 30 days (not 5 hours)",
   "All premium designs & effects",
   "Guest lists with CSV export",
 ];

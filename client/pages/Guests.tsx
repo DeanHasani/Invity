@@ -6,15 +6,20 @@ import { FloatingPhrases } from "@/components/FloatingPhrases";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase, signInWithGoogle } from "@/lib/supabase";
+import { THEME_COLORS, readStoredTheme } from "@/lib/theme";
 
 const LG_FONT = "'Luckiest Guy', cursive";
 
-const THEME_COLORS: Record<string, { hex: string; rgb: string }> = {
-  orange:   { hex: "#F05A28", rgb: "240,90,40" },
-  sky:      { hex: "#0284C7", rgb: "2,132,199" },
-  teal:     { hex: "#14B8A6", rgb: "20,184,166" },
-  warmgray: { hex: "#7C6A5E", rgb: "124,106,94" },
-};
+/** Remaining lifetime of a link, e.g. "4h left" / "12d left". */
+function formatRemaining(expiresAt: string): string {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return "expired";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m left`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 48) return `${hours}h left`;
+  return `${Math.floor(hours / 24)}d left`;
+}
 
 type InvitationRow = {
   id: string;
@@ -50,15 +55,12 @@ function downloadCsv(invitation: InvitationRow, rsvps: RsvpRow[]) {
 }
 
 export default function Guests() {
-  const [theme] = useState(() => {
-    const t = localStorage.getItem("invity_theme") ?? "orange";
-    return THEME_COLORS[t] ?? THEME_COLORS.orange;
-  });
+  const [theme] = useState(() => THEME_COLORS[readStoredTheme()]);
   const { user, isPro } = useSubscription();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["guest-lists", user?.email],
     enabled: !!user && isPro,
     queryFn: async () => {
@@ -83,6 +85,27 @@ export default function Guests() {
       return { invitations: (invitations ?? []) as InvitationRow[], rsvps };
     },
   });
+
+  // Hard delete via edge function: writes are service-role only under the RLS
+  // lockdown, and rsvps has no FK cascade, so the client can't do this itself.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const deleteInvitation = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.functions.invoke("delete-invitation", { body: { id } });
+      if (error) throw error;
+      toast.success("Link deleted — it's dead immediately.");
+      await refetch();
+    } catch (e) {
+      console.error("[guests] delete failed:", e);
+      toast.error("Couldn't delete that link. Try again.");
+    } finally {
+      setDeletingId(null);
+      setConfirmId(null);
+    }
+  };
 
   const handleSignIn = async () => {
     setSigningIn(true);
@@ -206,21 +229,51 @@ export default function Guests() {
                           </p>
                           <p className="text-[11px] uppercase tracking-wider opacity-60 font-bold mt-1">
                             {inv.date ? `${inv.date} · ` : ""}
-                            {live ? "🟢 LIVE" : "⚪ EXPIRED"} ·{" "}
+                            {live ? `🟢 ${formatRemaining(inv.expires_at)}` : "⚪ EXPIRED"} ·{" "}
                             {accepted.length} in · {declined.length} out
                           </p>
                         </div>
-                        {guests.length > 0 && (
-                          <button
-                            onClick={() => downloadCsv(inv, guests)}
-                            className="text-[11px] font-bold uppercase tracking-widest border border-white/40 px-4 py-2 hover:bg-white transition-colors"
-                            style={{ fontFamily: LG_FONT }}
-                            onMouseEnter={e => (e.currentTarget.style.color = theme.hex)}
-                            onMouseLeave={e => (e.currentTarget.style.color = "#fff")}
-                          >
-                            Export CSV
-                          </button>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {guests.length > 0 && (
+                            <button
+                              onClick={() => downloadCsv(inv, guests)}
+                              className="text-[11px] font-bold uppercase tracking-widest border border-white/40 px-4 py-2 hover:bg-white transition-colors"
+                              style={{ fontFamily: LG_FONT }}
+                              onMouseEnter={e => (e.currentTarget.style.color = theme.hex)}
+                              onMouseLeave={e => (e.currentTarget.style.color = "#fff")}
+                            >
+                              Export CSV
+                            </button>
+                          )}
+                          {confirmId === inv.id ? (
+                            <>
+                              <button
+                                onClick={() => deleteInvitation(inv.id)}
+                                disabled={deletingId === inv.id}
+                                className="text-[11px] font-bold uppercase tracking-widest border border-white bg-white px-4 py-2 transition-opacity hover:opacity-80 disabled:opacity-50"
+                                style={{ fontFamily: LG_FONT, color: theme.hex }}
+                              >
+                                {deletingId === inv.id ? "Deleting..." : "Confirm"}
+                              </button>
+                              <button
+                                onClick={() => setConfirmId(null)}
+                                className="text-[11px] font-bold uppercase tracking-widest border border-white/40 px-4 py-2 hover:bg-white/10 transition-colors"
+                                style={{ fontFamily: LG_FONT }}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmId(inv.id)}
+                              title="Delete this link permanently"
+                              className="text-[11px] font-bold uppercase tracking-widest border border-white/40 px-4 py-2 hover:bg-white/10 transition-colors"
+                              style={{ fontFamily: LG_FONT }}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="p-5">
                         {guests.length === 0 ? (

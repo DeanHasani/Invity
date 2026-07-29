@@ -52,7 +52,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Free tier">
-            Free accounts are limited to two invitation links per day. Each free link expires 8 hours after creation. These limits exist to ensure fair usage.
+            Free accounts are limited to two invitation links per day. Each free link expires 5 hours after creation. These limits exist to ensure fair usage.
           </Block>
 
           <Block title="Invity Pro">
@@ -76,7 +76,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Availability">
-            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary — they expire after 8 hours (free) or 30 days (Pro). Do not rely on them for permanent records.
+            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary — they expire after 5 hours (free) or 30 days (Pro). Do not rely on them for permanent records.
           </Block>
 
           <Block title="Limitation of liability">
