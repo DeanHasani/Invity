@@ -8,21 +8,16 @@
   "theme_color": "#F05A28",
   "icons": [
     {
-      "src": "/invity-app-icon-512.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/invity-favicon-tile.svg",
+      "src": "/brand/invity-favicon-tile.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
-    },
-    {
-      "src": "/invity-favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
     }
   ]
 }
