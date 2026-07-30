@@ -70,7 +70,7 @@ export function InAppBrowserBanner({
           {isAndroid ? (
             <button
               onClick={() => openInChrome(url, true)}
-              className="w-full bg-[#FF4D00] text-white font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-widest"
+              className="w-full bg-[#F05A28] text-white font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-widest"
             >
               Open in Chrome
             </button>
@@ -78,7 +78,7 @@ export function InAppBrowserBanner({
             <>
               <button
                 onClick={() => openInSafari(url)}
-                className="w-full bg-[#FF4D00] text-white font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-widest"
+                className="w-full bg-[#F05A28] text-white font-bold py-3.5 px-6 rounded-xl text-sm uppercase tracking-widest"
               >
                 Open in Safari
               </button>

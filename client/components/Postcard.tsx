@@ -1569,7 +1569,7 @@ function RsvpZone({
       >
         <p
           className="text-4xl md:text-6xl uppercase leading-tight max-w-sm"
-          style={{ fontFamily: LG, color: "#FF4D00" }}
+          style={{ fontFamily: LG, color: "#F05A28" }}
         >
           {randomMsg}
         </p>

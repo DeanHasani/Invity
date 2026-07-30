@@ -95,13 +95,13 @@ Deno.serve(async (req) => {
       subject: `${emoji} ${name} ${statusWord} your invitation`,
       html: `
         <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;">
-          <h2 style="color:#FF4D00;margin:0 0 16px;">${emoji} ${heading}</h2>
+          <h2 style="color:#F05A28;margin:0 0 16px;">${emoji} ${heading}</h2>
           <p style="font-size:16px;margin:0 0 8px;">
             <strong>${name}</strong> has <strong>${statusWord}</strong> your invitation.
           </p>
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
           <p style="color:#999;font-size:12px;margin:0;">
-            Sent by <a href="https://www.invity.cards" style="color:#FF4D00;">Invity</a>
+            Sent by <a href="https://www.invity.cards" style="color:#F05A28;">Invity</a>
           </p>
         </div>
       `,
