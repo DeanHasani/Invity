@@ -1322,6 +1322,23 @@ export default function Index() {
                 TELL US ABOUT<br />YOUR EVENT.
               </h2>
 
+              {/*
+                Plain-language statement of what this is. The equivalent copy
+                used to live only in index.html's pre-render block, which React
+                replaces on mount — so crawlers saw it but people never did.
+                Google's OAuth brand review rejected the app twice for exactly
+                that: a reviewer landed on a bare form with no app name in body
+                text and nothing explaining the product.
+              */}
+              <p className="text-sm md:text-base opacity-85 leading-relaxed max-w-xl">
+                <strong className="font-bold">Invity</strong> is a free digital invitation maker.
+                Fill in your event, pick a design, and get one link to share — your guests open it
+                and RSVP in a tap, with no app and no sign-up.{" "}
+                <Link to="/about" className="underline underline-offset-2 hover:opacity-100">
+                  More about Invity
+                </Link>
+              </p>
+
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-widest opacity-75">Event Title *</label>
                 <Input
