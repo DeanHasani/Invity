@@ -1,16 +1,28 @@
 {
-  "name": "INVITY",
-  "short_name": "INVITY",
+  "name": "Invity",
+  "short_name": "Invity",
+  "description": "Free digital invitation maker with built-in RSVP.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FF4D00",
-  "theme_color": "#FF4D00",
+  "background_color": "#F05A28",
+  "theme_color": "#F05A28",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/invity-app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/invity-favicon-tile.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/invity-favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
     }
   ]
 }
