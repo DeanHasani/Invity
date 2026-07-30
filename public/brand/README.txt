@@ -44,9 +44,11 @@ Clear space: keep the mark's own height / 4 clear on all sides.
 Don't recolour, outline, add gradients, or stretch. Below 24px use the favicon variant.
 
 Google OAuth consent screen
-  invity-google-oauth-120.png  120x120, rendered on white (Google displays this
-  on a white dialog; a transparent PNG can pick up a grey matte in some
-  clients). Upload at Google Cloud Console -> Google Auth Platform -> Branding.
+  invity-google-oauth-120.png  120x120, transparent corners. Do NOT flatten it
+  onto white: Google's consent screen has a dark theme, where a white-matted
+  logo renders as a glaring white square around the tile. Transparent corners
+  sit correctly on both themes. Upload at Google Cloud Console -> Google Auth
+  Platform -> Branding.
   Uploading a logo triggers Google's brand-verification review — the name and
   logo will not display on the live consent screen until it is approved, and
   app name / logo / homepage / authorized domain must all be consistent or the
