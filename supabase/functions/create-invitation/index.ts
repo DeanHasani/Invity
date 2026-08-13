@@ -6,6 +6,7 @@ import {
   isProStatus, resolveExpiryMs,
 } from "../_shared/premium.ts";
 import { paddleConfigured, paddleFetch } from "../_shared/paddle.ts";
+import { isDisposableEmail } from "../_shared/disposableEmail.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -33,11 +34,18 @@ Deno.serve(async (req) => {
 
   const { data: { user }, error: authError } =
     await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-  // Anonymous sessions carry valid JWTs — creation requires a real Google account
+  // Anonymous sessions carry valid JWTs — creation requires a real account
   if (authError || !user || user.is_anonymous || !user.email) {
     return json({ error: "unauthorized" }, 401);
   }
   const userEmail = user.email;
+
+  // The client blocks these at sign-up too, but that check is bypassable —
+  // this is the one that counts. Email codes made throwaway inboxes a cheap
+  // way to reset the daily cap; Google sign-in never had that problem.
+  if (isDisposableEmail(userEmail)) {
+    return json({ error: "disposable_email" }, 403);
+  }
 
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return json({ error: "invalid_input" }, 400); }
@@ -65,10 +73,15 @@ Deno.serve(async (req) => {
   }
 
   // ── Resolve plan ────────────────────────────────────────────────────────────
+  // Keyed on email, not user_id — Google and email-code sign-ins for the same
+  // address can land on different auth.users rows, and a paying customer must
+  // not lose Pro by switching method. Mirrors useSubscription on the client.
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_email", userEmail)
+    .order("current_period_end", { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle();
 
   let isPro = isProStatus(sub?.status);
@@ -90,7 +103,7 @@ Deno.serve(async (req) => {
             current_period_end: data.current_billing_period?.ends_at ?? null,
             scheduled_change: data.scheduled_change ?? null,
           })
-          .eq("user_id", user.id);
+          .eq("user_id", sub.user_id);
         isPro = isProStatus(data.status);
       }
     } catch (e) {

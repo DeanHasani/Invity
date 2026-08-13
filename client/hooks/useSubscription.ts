@@ -24,13 +24,19 @@ export function useSubscription() {
   }, []);
 
   const query = useQuery({
-    queryKey: ["subscription", user?.id],
+    queryKey: ["subscription", user?.email],
     enabled: !!user,
     queryFn: async () => {
+      // Keyed on email, not user_id: Google and email-code sign-ins for the
+      // same address can resolve to different auth.users rows, and the
+      // entitlement has to follow the address the customer pays under.
+      // Ordered so the longest-running row wins if a person ever has two.
       const { data, error } = await supabase
         .from("subscriptions")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_email", user!.email)
+        .order("current_period_end", { ascending: false, nullsFirst: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return (data as Subscription | null) ?? null;

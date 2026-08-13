@@ -18,6 +18,15 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/spa",
+    rollupOptions: {
+      // Two entries: the SPA, and a standalone /signin page. signin.html is its
+      // own document so crawlers get a real title and canonical there — the
+      // catch-all rewrite would otherwise hand them the homepage shell.
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        signin: path.resolve(__dirname, "signin.html"),
+      },
+    },
   },
   plugins: [react(), expressPlugin()],
   resolve: {
