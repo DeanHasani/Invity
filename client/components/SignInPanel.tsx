@@ -10,6 +10,13 @@ import {
 const LG_FONT = "'Luckiest Guy', cursive";
 const RESEND_COOLDOWN_S = 45;
 
+// Supabase's OTP length is a dashboard setting (Authentication → Providers →
+// Email → OTP Length), adjustable from 6 to 10. Accept the whole range rather
+// than hard-coding one, so changing it there can't leave this form rejecting
+// valid codes. The code itself is only ever validated server-side.
+const OTP_MIN = 6;
+const OTP_MAX = 10;
+
 const MESSAGES: Record<string, string> = {
   invalid_email:    "That doesn't look like an email address.",
   disposable_email: "Throwaway inboxes aren't supported — use a real address.",
@@ -163,22 +170,22 @@ export function SignInPanel({
       ) : (
         <form
           className="w-full flex flex-col gap-3"
-          onSubmit={e => { e.preventDefault(); if (!busy && code.length === 6) void handleVerify(); }}
+          onSubmit={e => { e.preventDefault(); if (!busy && code.length >= OTP_MIN) void handleVerify(); }}
         >
           <input
             ref={codeRef}
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={6}
+            maxLength={OTP_MAX}
             value={code}
-            onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(null); }}
-            placeholder="000000"
+            onChange={e => { setCode(e.target.value.replace(/\D/g, "").slice(0, OTP_MAX)); setError(null); }}
+            placeholder={"0".repeat(OTP_MIN)}
             className="w-full px-4 py-4 text-2xl text-center outline-none focus:border-white/40 transition-colors"
-            style={{ ...inputStyle, fontFamily: LG_FONT, letterSpacing: "0.5em", textIndent: "0.5em" }}
+            style={{ ...inputStyle, fontFamily: LG_FONT, letterSpacing: "0.3em", textIndent: "0.3em" }}
           />
           <button
             type="submit"
-            disabled={busy || code.length !== 6}
+            disabled={busy || code.length < OTP_MIN}
             className="w-full py-4 text-sm font-bold uppercase tracking-wider transition-colors disabled:opacity-40"
             style={{ fontFamily: LG_FONT, background: "var(--accent-fill)", color: "var(--accent-fg)" }}
           >
