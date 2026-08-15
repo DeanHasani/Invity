@@ -17,6 +17,7 @@ import Pricing from "./pages/Pricing";
 import AboutUs from "./pages/AboutUs";
 import Guests from "./pages/Guests";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { RouteMeta } from "./components/RouteMeta";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteMeta />
         <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Index />} />
