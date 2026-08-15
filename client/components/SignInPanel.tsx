@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  supabase,
   signInWithGoogle,
   sendEmailCode,
   verifyEmailCode,
@@ -49,9 +50,11 @@ export function SignInPanel({
   const [error, setError]     = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const codeRef = useRef<HTMLInputElement>(null);
+  const popupWatch = useRef<ReturnType<typeof setInterval>>();
 
   // Restore the anonymous session if they navigate away mid-flow
   useEffect(() => () => { if (step === "code") void cancelEmailSignIn(); }, [step]);
+  useEffect(() => () => clearInterval(popupWatch.current), []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -63,8 +66,32 @@ export function SignInPanel({
 
   const handleGoogle = async () => {
     setBusy(true); setError(null);
-    try { await signInWithGoogle(); }
-    catch { setBusy(false); setError("Google sign-in failed. Try again."); }
+    try {
+      const popup = await signInWithGoogle();
+      if (!popup) return; // popup blocked — the page is redirecting instead
+
+      /**
+       * On success the popup posts back and closes, and onAuthStateChange takes
+       * it from there. If it closes WITHOUT a session, nothing else would ever
+       * clear this state and the modal sits on "OPENING..." forever. That
+       * happens when the user dismisses the Google window, and also when the
+       * popup lands on a different origin — which is what a redirect URL that
+       * isn't allow-listed for this host looks like from in here.
+       */
+      clearInterval(popupWatch.current);
+      popupWatch.current = setInterval(async () => {
+        if (!popup.closed) return;
+        clearInterval(popupWatch.current);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user || session.user.is_anonymous) {
+          setBusy(false);
+          setError("Sign-in didn't finish. Try again, or use an email code instead.");
+        }
+      }, 500);
+    } catch {
+      setBusy(false);
+      setError("Google sign-in failed. Try again.");
+    }
   };
 
   const handleSend = async (resend = false) => {

@@ -19,7 +19,13 @@ export async function ensureAnonSession() {
 
 ensureAnonSession();
 
-export async function signInWithGoogle() {
+/**
+ * Returns the popup so the caller can tell whether it closed without signing
+ * in — dismissed by the user, or landed on another origin because the redirect
+ * URL isn't allow-listed for this host. Null means we fell back to a full-page
+ * redirect and the page is already navigating away.
+ */
+export async function signInWithGoogle(): Promise<Window | null> {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -28,11 +34,12 @@ export async function signInWithGoogle() {
     },
   });
   if (error) throw error;
-  if (data?.url) {
-    const popup = window.open(data.url, "google-oauth", "width=520,height=650,left=200,top=100");
-    // If popup blocked by browser, fall back to redirect
-    if (!popup) window.location.href = data.url;
-  }
+  if (!data?.url) return null;
+
+  const popup = window.open(data.url, "google-oauth", "width=520,height=650,left=200,top=100");
+  // If popup blocked by browser, fall back to redirect
+  if (!popup) { window.location.href = data.url; return null; }
+  return popup;
 }
 
 /** Thrown with a stable `code` so the UI can pick the message. */

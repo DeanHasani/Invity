@@ -16,6 +16,16 @@ const json = (body: unknown, status = 200) =>
     headers: { ...CORS, "Content-Type": "application/json" },
   });
 
+/**
+ * Guest-supplied strings land in an HTML email body, so they have to be
+ * escaped. The note is free text and by far the likeliest to contain markup,
+ * but the name and the event title go through the same path and were being
+ * interpolated raw.
+ */
+const esc = (v: string) =>
+  v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+   .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS });
@@ -31,6 +41,8 @@ Deno.serve(async (req) => {
   const status = body.status === "accepted" || body.status === "declined" ? body.status : "";
   const viewer_token =
     typeof body.viewer_token === "string" ? body.viewer_token.slice(0, 80) : null;
+  // Optional — guests can skip it. Empty string and absent mean the same thing.
+  const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
 
   if (!invitation_id || !name || !status) {
     return json({ error: "missing_fields" }, 400);
@@ -58,7 +70,7 @@ Deno.serve(async (req) => {
   if (viewer_token) {
     const { error: insertError } = await supabase
       .from("rsvps")
-      .insert({ invitation_id, name, status, viewer_token });
+      .insert({ invitation_id, name, status, viewer_token, note: note || null });
 
     if (insertError) {
       // 23505 = unique violation → this device already responded; don't re-email
@@ -80,8 +92,16 @@ Deno.serve(async (req) => {
   const statusWord = status === "accepted" ? "accepted" : "declined";
   const heading =
     status === "accepted"
-      ? `Looks like somebody is in for the <em>${title}</em> event!`
-      : `Somebody can't make it to the <em>${title}</em> event.`;
+      ? `Looks like somebody is in for the <em>${esc(title)}</em> event!`
+      : `Somebody can't make it to the <em>${esc(title)}</em> event.`;
+
+  const noteBlock = note
+    ? `
+          <p style="font-size:14px;margin:16px 0 6px;color:#666;">They left a note:</p>
+          <blockquote style="margin:0;padding:12px 16px;background:#faf7f5;border-left:3px solid #F05A28;font-size:15px;line-height:1.5;color:#333;">
+            ${esc(note)}
+          </blockquote>`
+    : "";
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -97,8 +117,8 @@ Deno.serve(async (req) => {
         <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:24px;">
           <h2 style="color:#F05A28;margin:0 0 16px;">${emoji} ${heading}</h2>
           <p style="font-size:16px;margin:0 0 8px;">
-            <strong>${name}</strong> has <strong>${statusWord}</strong> your invitation.
-          </p>
+            <strong>${esc(name)}</strong> has <strong>${statusWord}</strong> your invitation.
+          </p>${noteBlock}
           <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
           <p style="color:#999;font-size:12px;margin:0;">
             Sent by <a href="https://www.invity.cards" style="color:#F05A28;">Invity</a>

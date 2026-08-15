@@ -15,6 +15,19 @@
 }
 .babyshower-train { animation:trainmove 13s linear infinite; }
 
+/* Step-2 design tile opening into its full preview. Scaled from the top-left
+   corner so it reads as that tile growing diagonally into the space, rather
+   than a separate panel fading in over the grid. */
+@keyframes tileExpand {
+  from { opacity:0; transform:scale(0.32); }
+  to   { opacity:1; transform:scale(1); }
+}
+/* Collapsing back — the grid settles in rather than snapping. */
+@keyframes tileGridReturn {
+  from { opacity:0; transform:scale(0.93); }
+  to   { opacity:1; transform:scale(1); }
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

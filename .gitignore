@@ -26,3 +26,6 @@ dist-ssr
 
 .config/
 !.env
+
+# Supabase CLI local link state (project ref, service versions) — machine-local
+supabase/.temp/

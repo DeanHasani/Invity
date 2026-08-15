@@ -33,6 +33,7 @@ type RsvpRow = {
   invitation_id: string;
   name: string;
   status: "accepted" | "declined";
+  note?: string | null;
   created_at?: string | null;
 };
 
@@ -41,9 +42,9 @@ function csvEscape(v: string): string {
 }
 
 function downloadCsv(invitation: InvitationRow, rsvps: RsvpRow[]) {
-  const lines = ["guest_name,status,responded_at"];
+  const lines = ["guest_name,status,note,responded_at"];
   for (const r of rsvps) {
-    lines.push([csvEscape(r.name), r.status, r.created_at ?? ""].join(","));
+    lines.push([csvEscape(r.name), r.status, csvEscape(r.note ?? ""), r.created_at ?? ""].join(","));
   }
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
@@ -76,7 +77,7 @@ export default function Guests() {
       if (ids.length) {
         const { data: rows, error: rsvpError } = await supabase
           .from("rsvps")
-          .select("invitation_id, name, status, created_at")
+          .select("invitation_id, name, status, note, created_at")
           .in("invitation_id", ids)
           .order("created_at", { ascending: true });
         if (rsvpError) throw rsvpError;
@@ -283,12 +284,19 @@ export default function Guests() {
                             {guests.map((g, i) => (
                               <div
                                 key={`${g.name}-${i}`}
-                                className="flex items-center justify-between border border-white/20 px-3 py-2 text-sm"
+                                className="border border-white/20 px-3 py-2 text-sm"
                               >
-                                <span className="font-bold truncate">{g.name}</span>
-                                <span className={g.status === "accepted" ? "opacity-90" : "opacity-50"}>
-                                  {g.status === "accepted" ? "✔ IN" : "✘ OUT"}
-                                </span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-bold truncate">{g.name}</span>
+                                  <span className={g.status === "accepted" ? "opacity-90" : "opacity-50"}>
+                                    {g.status === "accepted" ? "✔ IN" : "✘ OUT"}
+                                  </span>
+                                </div>
+                                {g.note && (
+                                  <p className="mt-1.5 pl-2 border-l-2 border-white/25 text-[12px] leading-snug opacity-70 whitespace-pre-wrap break-words">
+                                    {g.note}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>

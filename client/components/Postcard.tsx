@@ -15,7 +15,7 @@ interface PostcardProps {
   /** Hours until the link expires. Default: 24 */
   expiresInHours?: number;
   /** Called when the viewer submits their RSVP name */
-  onRsvp?: (name: string, status: "accepted" | "declined") => Promise<void>;
+  onRsvp?: (name: string, status: "accepted" | "declined", note?: string) => Promise<void>;
 }
 
 // Perceived-brightness check for a #rrggbb color. Used to flip effects that
@@ -1302,7 +1302,7 @@ function WeddingCanvas() {
         src="/wedding/wedding.svg"
         alt=""
         className="absolute left-1/2 top-1/2 pointer-events-none"
-        style={{ width: "42%", maxWidth: 320, height: "auto", transform: "translate(-50%,-50%)", opacity: 0.24 }}
+        style={{ width: "42%", maxWidth: 320, height: "auto", transform: "translate(-50%,-50%)", opacity: 0.4 }}
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
       <img
@@ -1526,19 +1526,22 @@ const THEME_RSVP: Record<string, {
   babyshower:   { acceptBg: "#8E7BB0", acceptText: "#ffffff", declineText: "rgba(62,54,46,0.5)",   declineBorder: "rgba(62,54,46,0.3)",    inputText: "#3E362E",  inputBorder: "rgba(142,123,176,0.5)",  msgColor: "#8E7BB0"  },
 };
 
-type RsvpPhase = "idle" | "name-entry" | "submitting" | "done";
+type RsvpPhase = "idle" | "name-entry" | "note-entry" | "submitting" | "done";
+
+const NOTE_MAX = 500;
 
 function RsvpZone({
   designId,
   onRsvp,
 }: {
   designId: string;
-  onRsvp?: (name: string, status: "accepted" | "declined") => Promise<void>;
+  onRsvp?: (name: string, status: "accepted" | "declined", note?: string) => Promise<void>;
 }) {
   const [phase, setPhase]       = useState<RsvpPhase>("idle");
   const [choice, setChoice]     = useState<"accepted" | "declined" | null>(null);
   const [randomMsg, setRandomMsg] = useState("");
   const [name, setName]         = useState("");
+  const [note, setNote]         = useState("");
   const [finalName, setFinalName] = useState("");
 
   const theme = THEME_RSVP[designId] ?? THEME_RSVP["elegant"];
@@ -1551,12 +1554,19 @@ function RsvpZone({
     setPhase("name-entry");
   };
 
-  const submit = async () => {
+  // Name is required; the note step comes after and is always skippable.
+  const confirmName = () => {
     const trimmed = name.trim();
     if (!trimmed || !choice) return;
     setFinalName(trimmed);
+    setPhase("note-entry");
+  };
+
+  const submit = async (withNote: boolean) => {
+    if (!choice) return;
+    const trimmed = withNote ? note.trim() : "";
     setPhase("submitting");
-    await onRsvp?.(trimmed, choice);
+    await onRsvp?.(finalName, choice, trimmed || undefined);
     setPhase("done");
   };
 
@@ -1590,8 +1600,60 @@ function RsvpZone({
     );
   }
 
-  // ── Name-entry / submitting ───────────────────────────────────────────────
-  if (phase === "name-entry" || phase === "submitting") {
+  // ── Note-entry / submitting ───────────────────────────────────────────────
+  if (phase === "note-entry" || phase === "submitting") {
+    const sending = phase === "submitting";
+    return (
+      <div
+        className="relative w-full mt-6 md:mt-0 md:absolute md:bottom-6 md:left-0 md:right-0 z-20 flex flex-col items-center gap-3 px-6 text-center max-w-xs mx-auto"
+        style={{ animation: "rsvpFadeIn 0.35s ease forwards" }}
+      >
+        <p
+          className="text-lg md:text-xl uppercase leading-tight"
+          style={{ fontFamily: LG, color: theme.msgColor }}
+        >
+          Add a note?
+        </p>
+        <textarea
+          value={note}
+          onChange={e => setNote(e.target.value.slice(0, NOTE_MAX))}
+          onKeyDown={e => {
+            // Enter sends, Shift+Enter makes a new line
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(true); }
+          }}
+          placeholder="Optional — anything they should know?"
+          autoFocus
+          rows={2}
+          disabled={sending}
+          className="w-full resize-none text-center text-base bg-transparent border-b-2 py-2 px-3 focus:outline-none placeholder:opacity-30"
+          style={{
+            borderColor: theme.inputBorder,
+            color: theme.inputText,
+            fontFamily: "'Montserrat', sans-serif",
+          }}
+        />
+        <button
+          onClick={() => submit(true)}
+          disabled={sending || !note.trim()}
+          style={{ background: theme.acceptBg, color: theme.acceptText, fontFamily: LG }}
+          className="w-full py-3 text-lg uppercase tracking-wider transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {sending ? "SENDING..." : "SEND WITH NOTE"}
+        </button>
+        <button
+          onClick={() => submit(false)}
+          disabled={sending}
+          style={{ color: theme.declineText, fontFamily: LG }}
+          className="text-sm uppercase tracking-wider transition-opacity hover:opacity-75 disabled:opacity-40"
+        >
+          Skip
+        </button>
+      </div>
+    );
+  }
+
+  // ── Name-entry ────────────────────────────────────────────────────────────
+  if (phase === "name-entry") {
     return (
       <div
         className="relative w-full mt-6 md:mt-0 md:absolute md:bottom-6 md:left-0 md:right-0 z-20 flex flex-col items-center gap-3 px-6 text-center max-w-xs mx-auto"
@@ -1606,10 +1668,9 @@ function RsvpZone({
         <input
           value={name}
           onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && submit()}
+          onKeyDown={e => e.key === "Enter" && confirmName()}
           placeholder="Your name..."
           autoFocus
-          disabled={phase === "submitting"}
           className="w-full text-center text-lg bg-transparent border-b-2 py-2 px-3 focus:outline-none placeholder:opacity-30"
           style={{
             borderColor: theme.inputBorder,
@@ -1618,12 +1679,12 @@ function RsvpZone({
           }}
         />
         <button
-          onClick={submit}
-          disabled={phase === "submitting" || !name.trim()}
+          onClick={confirmName}
+          disabled={!name.trim()}
           style={{ background: theme.acceptBg, color: theme.acceptText, fontFamily: LG }}
           className="w-full py-3 text-lg uppercase tracking-wider transition-opacity hover:opacity-90 disabled:opacity-40"
         >
-          {phase === "submitting" ? "SENDING..." : choice === "accepted" ? "I'M IN!" : "CONFIRM"}
+          {choice === "accepted" ? "I'M IN!" : "CONFIRM"}
         </button>
       </div>
     );

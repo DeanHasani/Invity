@@ -101,13 +101,13 @@ export default function InvitationView() {
       });
   }, [id]);
 
-  const handleRsvp = async (name: string, status: "accepted" | "declined") => {
+  const handleRsvp = async (name: string, status: "accepted" | "declined", note?: string) => {
     if (!id) return;
 
     // The edge function records the RSVP (deduped per device) AND emails the host
     try {
       await supabase.functions.invoke("notify-rsvp", {
-        body: { invitation_id: id, name, status, viewer_token: getViewerToken() },
+        body: { invitation_id: id, name, status, note, viewer_token: getViewerToken() },
       });
     } catch (_) { /* non-blocking — don't trap the guest on an error */ }
 

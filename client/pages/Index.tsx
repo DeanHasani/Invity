@@ -847,7 +847,31 @@ export default function Index() {
   const { hex: BRAND } = THEME_COLORS[theme];
   const THEME_VARS = themeVars(theme);
   const [effectPreviewKey, setEffectPreviewKey] = useState(0);
+  // Which step-2 design tile is opened out to full size, if any.
+  const [openDesign, setOpenDesign] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Bring the live preview into view after picking a font or effect. The grids
+   * are tall enough on mobile to push it off-screen, which meant scrolling down
+   * to look and back up to pick again for every single option.
+   *
+   * No-op when the preview is already fully visible, so desktop — where it
+   * usually is — doesn't get a pointless jump on every click.
+   */
+  const revealPreview = () => {
+    requestAnimationFrame(() => {
+      const el = previewRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.top >= 0 && r.bottom <= window.innerHeight) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
+  // Leaving step 2 closes the opened design, so coming back lands on the grid.
+  useEffect(() => { if (step !== 2) setOpenDesign(null); }, [step]);
 
   // ── Auth state ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1402,37 +1426,123 @@ export default function Index() {
               <h2 className="text-3xl md:text-5xl leading-[1.08]" style={{ fontFamily: LG_FONT }}>
                 PICK A<br />DESIGN.
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                {DESIGNS.map(d => {
-                  const locked = !isPro && PRO_DESIGN_IDS.includes(d.id);
+              {/* The grid and the opened design share one box: the grid fades and
+                  shrinks in place while the opened tile expands over it from the
+                  top-left. No timers — the two are just crossfaded, so a fast
+                  double-tap can't leave it stuck half-open. */}
+              <div className="relative">
+                <div
+                  className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3"
+                  style={{
+                    transition: "opacity 0.26s ease, transform 0.26s ease",
+                    opacity: openDesign ? 0 : 1,
+                    transform: openDesign ? "scale(0.92)" : "scale(1)",
+                    pointerEvents: openDesign ? "none" : undefined,
+                  }}
+                >
+                  {DESIGNS.map((d, i) => {
+                    const locked = !isPro && PRO_DESIGN_IDS.includes(d.id);
+                    const isSel = formData.designId === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => {
+                          setFormData({ ...formData, designId: d.id as any });
+                          setOpenDesign(d.id);
+                        }}
+                        style={{
+                          ...(d.style ?? {}),
+                          ...(isSel ? { "--tw-ring-offset-color": BRAND } : {}),
+                          // Staggered so the grid ripples back in rather than
+                          // every tile landing at once.
+                          animation: openDesign ? undefined : `tileGridReturn 0.3s ease-out ${i * 22}ms both`,
+                        } as React.CSSProperties}
+                        className={cn(
+                          "relative py-8 md:py-10 px-2 transition-colors duration-200 flex items-center justify-center text-center",
+                          d.color,
+                          isSel
+                            ? "scale-[1.02] ring-4 ring-white ring-offset-2"
+                            : locked ? "opacity-45 hover:opacity-70" : "opacity-65 hover:opacity-95"
+                        )}
+                      >
+                        <span className="text-base md:text-xl uppercase leading-tight" style={{ fontFamily: LG_FONT }}>{d.label}</span>
+                        {isSel && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
+                        {locked && (
+                          <span
+                            className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest"
+                            style={{ background: "rgba(0,0,0,0.75)", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
+                          >
+                            <Lock className="w-2.5 h-2.5" /> PRO
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(() => {
+                  const opened = openDesign ? DESIGNS.find(d => d.id === openDesign) : null;
+                  if (!opened) return null;
+                  const lockedOpen = !isPro && PRO_DESIGN_IDS.includes(opened.id);
                   return (
-                    <button
-                      key={d.id}
-                      onClick={() => setFormData({ ...formData, designId: d.id as any })}
-                      style={{ ...(d.style ?? {}), ...(formData.designId === d.id ? { "--tw-ring-offset-color": BRAND } : {}) } as React.CSSProperties}
+                    <div
+                      onClick={() => { setOpenDesign(null); }}
+                      style={{
+                        ...(opened.style ?? {}),
+                        animation: "tileExpand 0.34s cubic-bezier(.2,.9,.25,1) both",
+                        transformOrigin: "top left",
+                      } as React.CSSProperties}
                       className={cn(
-                        "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center",
-                        d.color,
-                        formData.designId === d.id
-                          ? "scale-[1.02] ring-4 ring-white ring-offset-2"
-                          : locked ? "opacity-45 hover:opacity-70" : "opacity-65 hover:opacity-95"
+                        "absolute inset-0 z-10 overflow-hidden cursor-pointer flex flex-col",
+                        opened.color
                       )}
                     >
-                      <span className="text-base md:text-xl uppercase leading-tight" style={{ fontFamily: LG_FONT }}>{d.label}</span>
-                      {formData.designId === d.id && <Check className="w-4 h-4 absolute top-1.5 right-1.5" />}
-                      {locked && (
+                      {/* Label stays top-left, where it sat on the tile */}
+                      <span
+                        className="absolute top-3 left-3 z-10 text-xl md:text-2xl uppercase leading-none"
+                        style={{ fontFamily: LG_FONT }}
+                      >
+                        {opened.label}
+                      </span>
+                      <button
+                        onClick={ev => { ev.stopPropagation(); setOpenDesign(null); setEffectPreviewKey(k => k + 1); }}
+                        className="absolute top-2 right-3 z-10 text-3xl leading-none opacity-40 hover:opacity-100 transition-opacity"
+                        aria-label="Close"
+                      >
+                        &times;
+                      </button>
+
+                      {/* The design's own animated canvas — the same one playing
+                          on the page behind it — running inside the box. No
+                          title, no words: this is a clear look at the design. */}
+                      {(() => {
+                        const OpenedCanvas = CANVAS_MAP[opened.id];
+                        return OpenedCanvas ? (
+                          <div
+                            key={opened.id}
+                            className="absolute inset-0 overflow-hidden pointer-events-none"
+                            style={{ animation: "canvasFadeIn 0.45s ease forwards" }}
+                          >
+                            <OpenedCanvas />
+                          </div>
+                        ) : null;
+                      })()}
+
+                      <span className="absolute bottom-3 left-3 z-10 text-[10px] uppercase tracking-widest opacity-45">
+                        Tap to close
+                      </span>
+                      {lockedOpen && (
                         <span
-                          className="absolute top-1.5 left-1.5 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest"
+                          className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 uppercase tracking-widest"
                           style={{ background: "rgba(0,0,0,0.75)", color: "#fff", fontFamily: "'Montserrat', sans-serif" }}
                         >
                           <Lock className="w-2.5 h-2.5" /> PRO
                         </span>
                       )}
-                    </button>
+                    </div>
                   );
-                })}
-              </div>
-            </div>
+                })()}
+              </div>            </div>
           )}
 
           {/* ── STEP 3: Font & Color ── */}
@@ -1448,7 +1558,7 @@ export default function Index() {
                   return (
                     <button
                       key={f.id}
-                      onClick={() => setFormData({ ...formData, fontId: f.id })}
+                      onClick={() => { setFormData({ ...formData, fontId: f.id }); revealPreview(); }}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
                         isSel ? "bg-white border-white" : "border-white/30 opacity-65 hover:opacity-95"
@@ -1465,7 +1575,7 @@ export default function Index() {
               </div>
 
               {/* Color picker + preview — always visible below the grid */}
-              <div className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
+              <div ref={previewRef} className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
                 <p
                   className="uppercase text-center leading-none"
                   style={{
@@ -1527,6 +1637,7 @@ export default function Index() {
                       onClick={() => {
                         setFormData({ ...formData, effectId: e.id as any });
                         setEffectPreviewKey(k => k + 1);
+                        revealPreview();
                       }}
                       className={cn(
                         "relative py-8 md:py-10 px-2 transition-all duration-200 flex items-center justify-center text-center border-2",
@@ -1555,7 +1666,7 @@ export default function Index() {
               {(() => {
                 const selEffect = EFFECTS.find(e => e.id === formData.effectId) ?? EFFECTS[0];
                 return (
-                  <div className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
+                  <div ref={previewRef} className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
                     <TitleEffectPreview
                       key={`${selEffect.id}-${effectPreviewKey}`}
                       title={formData.title}
@@ -1732,14 +1843,6 @@ export default function Index() {
           </div>
         )}
         <SiteFooter variant="compact" />
-      </div>
-
-      {/* Decorative BG text */}
-      <div
-        className="fixed -bottom-16 -left-8 text-[18vw] leading-none opacity-[0.04] pointer-events-none select-none whitespace-nowrap"
-        style={{ fontFamily: LG_FONT }}
-      >
-        LET'S CELEBRATE
       </div>
 
       {/* Footer — desktop only, mobile uses the bottom nav bar */}
