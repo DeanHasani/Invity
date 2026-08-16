@@ -1,7 +1,20 @@
 import type { PostHog } from "posthog-js";
 
-const KEY  = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-const HOST = (import.meta.env.VITE_POSTHOG_HOST as string) || "https://eu.i.posthog.com";
+const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+
+/**
+ * Served from our own origin and proxied to PostHog by the /ingest rewrites in
+ * vercel.json, so domain-based ad blockers don't filter it — roughly a fifth to
+ * a third of visitors run one, and a blocked load fails silently by design.
+ *
+ * Those rewrites must stay above the /(.*) catch-all: below it, every analytics
+ * request is answered with index.html and tracking breaks without an error.
+ *
+ * ui_host is separate because the proxy only carries ingestion — toolbar and
+ * session-replay links still need to point at the real dashboard.
+ */
+const HOST = (import.meta.env.VITE_POSTHOG_HOST as string) || "/ingest";
+const UI_HOST = "https://eu.posthog.com";
 
 /**
  * Builder surfaces only.
@@ -38,6 +51,7 @@ function ensureLoaded(): Promise<void> {
       .then(({ default: posthog }) => {
         posthog.init(KEY, {
           api_host: HOST,
+          ui_host: UI_HOST,
           // Anonymous visitors stay anonymous; a person profile is only created
           // once someone signs in and identify is called.
           person_profiles: "identified_only",
