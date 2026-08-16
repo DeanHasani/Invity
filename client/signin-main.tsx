@@ -7,6 +7,10 @@ import "./global.css";
 import { createRoot } from "react-dom/client";
 import SignIn from "./pages/SignIn";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { capturePageview } from "./lib/analytics";
+
+// This entry has no router, so the one pageview is recorded directly.
+capturePageview("/signin");
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

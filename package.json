@@ -28,6 +28,7 @@
     "gsap": "^3.14.2",
     "nanoid": "^5.1.6",
     "ogl": "^1.0.11",
+    "posthog-js": "^1.417.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {

@@ -18,6 +18,7 @@ import AboutUs from "./pages/AboutUs";
 import Guests from "./pages/Guests";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { RouteMeta } from "./components/RouteMeta";
+import { Analytics } from "./components/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RouteMeta />
+        <Analytics />
         <ErrorBoundary>
         <Routes>
           <Route path="/" element={<Index />} />
