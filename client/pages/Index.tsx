@@ -1814,6 +1814,33 @@ export default function Index() {
         </div>
       </main>
 
+      {/*
+        Launch-directory badges. Both directories verify the listing by fetching
+        this page and looking for their own badge, so they stay up for as long as
+        the listings run. Homepage only, and mirrored in index.html's pre-render
+        block for crawlers that never boot the app.
+      */}
+      <div className="relative z-10 flex flex-wrap items-center justify-center gap-4 px-6 pb-32 md:pb-14">
+        <a href="https://launchstreak.dev/saas/invity" target="_blank" rel="noopener noreferrer">
+          <img
+            src="https://launchstreak.dev/badge/launch-streak-badge-dark.svg"
+            alt="Launched on Launch Streak"
+            width="248"
+            height="68"
+            className="h-auto max-w-full"
+          />
+        </a>
+        <a href="https://www.launchory.app/startups/invity-cards?ref=badge" target="_blank" rel="noopener noreferrer">
+          <img
+            src="https://www.launchory.app/api/badge/invity-cards?theme=dark"
+            alt="Featured on Launchory"
+            width="240"
+            height="54"
+            className="h-auto max-w-full"
+          />
+        </a>
+      </div>
+
       {/* ── Mobile bottom nav ── */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex flex-col border-t border-white/20" style={{ background: BRAND }}>
         {step < 5 && (
