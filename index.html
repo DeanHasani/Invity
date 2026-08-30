@@ -44,6 +44,22 @@
     }
     </script>
 
+    <!--
+      Site name for the search result. Google reads WebSite.name for the label
+      it prints above the blue title link, and WebApplication above is not a
+      type it accepts for that, so without this block it falls back to guessing
+      from og:site_name or the bare domain.
+    -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Invity Cards",
+      "alternateName": "Invity",
+      "url": "https://www.invity.cards/"
+    }
+    </script>
+
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/brand/invity-favicon-tile.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/brand/invity-apple-touch-180.png" />
