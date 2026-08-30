@@ -60,7 +60,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Billing">
-            Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders — Paddle handles payment processing, billing support, and applicable taxes. Subscriptions renew automatically (monthly or yearly) until cancelled. You can cancel anytime from the account menu; cancellation takes effect at the end of the current billing period and you keep Pro access until then.
+            Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders, so Paddle handles payment processing, billing support, and applicable taxes. Subscriptions renew automatically (monthly or yearly) until cancelled. You can cancel anytime from the account menu; cancellation takes effect at the end of the current billing period and you keep Pro access until then.
           </Block>
 
           <Block title="Refunds">
@@ -76,7 +76,7 @@ export default function TermsOfService() {
           </Block>
 
           <Block title="Availability">
-            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary — they expire after 5 hours (free) or 30 days (Pro). Do not rely on them for permanent records.
+            We do our best to keep Invity running, but we do not guarantee uptime or availability. Invitation links are temporary. They expire after 5 hours (free) or 30 days (Pro). Do not rely on them for permanent records.
           </Block>
 
           <Block title="Limitation of liability">

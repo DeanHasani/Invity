@@ -34,13 +34,13 @@ Deno.serve(async (req) => {
 
   const { data: { user }, error: authError } =
     await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-  // Anonymous sessions carry valid JWTs — creation requires a real account
+  // Anonymous sessions carry valid JWTs, but creation requires a real account
   if (authError || !user || user.is_anonymous || !user.email) {
     return json({ error: "unauthorized" }, 401);
   }
   const userEmail = user.email;
 
-  // The client blocks these at sign-up too, but that check is bypassable —
+  // The client blocks these at sign-up too, but that check is bypassable,
   // this is the one that counts. Email codes made throwaway inboxes a cheap
   // way to reset the daily cap; Google sign-in never had that problem.
   if (isDisposableEmail(userEmail)) {
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
   }
 
   // ── Resolve plan ────────────────────────────────────────────────────────────
-  // Keyed on email, not user_id — Google and email-code sign-ins for the same
+  // Keyed on email, not user_id, because Google and email-code sign-ins for the same
   // address can land on different auth.users rows, and a paying customer must
   // not lose Pro by switching method. Mirrors useSubscription on the client.
   const { data: sub } = await supabase
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   let isPro = isProStatus(sub?.status);
 
   // Self-heal: if the row claims Pro but the billing period ended >3 days ago,
-  // a terminal webhook may have been missed — re-check with Paddle directly.
+  // a terminal webhook may have been missed, so re-check with Paddle directly.
   if (
     isPro && paddleConfigured() && sub?.current_period_end &&
     new Date(sub.current_period_end).getTime() < Date.now() - 3 * 24 * 3_600_000
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       console.error("paddle self-heal failed:", e);
-      // fail open — the stored status stands
+      // fail open: the stored status stands
     }
   }
 
@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
           .eq("creator_id", creatorId).gte("created_at", since24h)
       : Promise.resolve({ count: 0 }),
   ]);
-  // Device count only limits free users — a Pro user shares no cap with other
+  // Device count only limits free users, since a Pro user shares no cap with other
   // accounts on the same device beyond the abuse cap on their own email.
   const emailCount = Math.max(counts[0].count ?? 0, counts[1].count ?? 0);
   const deviceCount = counts[2].count ?? 0;
@@ -169,8 +169,8 @@ Deno.serve(async (req) => {
     return json({ error: "create_failed" }, 500);
   }
 
-  // was_pro is recorded here so the nightly rollup can split free/pro accurately
-  // — joining to subscriptions later would report today's plan, not this one.
+  // was_pro is recorded here so the nightly rollup can split free/pro accurately.
+  // Joining to subscriptions later would report today's plan, not this one.
   await supabase.from("creation_log").insert({
     user_email: userEmail,
     creator_id: creatorId,

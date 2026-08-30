@@ -20,7 +20,7 @@ const OTP_MAX = 10;
 
 const MESSAGES: Record<string, string> = {
   invalid_email:    "That doesn't look like an email address.",
-  disposable_email: "Throwaway inboxes aren't supported — use a real address.",
+  disposable_email: "Throwaway inboxes aren't supported. Use a real address.",
   rate_limited:     "Too many attempts. Wait a minute and try again.",
   bad_code:         "That code isn't right, or it's expired.",
   failed:           "Couldn't send the code. Try again.",
@@ -30,9 +30,9 @@ const errText = (e: unknown) =>
   MESSAGES[e instanceof EmailSignInError ? e.code : "failed"] ?? MESSAGES.failed;
 
 /**
- * The single sign-in surface — Google plus a mailed 6-digit code.
+ * The single sign-in surface: Google plus a mailed 6-digit code.
  * Shared by the in-flow modals and the standalone /signin page so the two can't
- * drift. Renders bare (no backdrop, no card) — the host supplies the chrome.
+ * drift. Renders bare (no backdrop, no card), so the host supplies the chrome.
  */
 export function SignInPanel({
   heading = "Sign In to Continue",
@@ -68,14 +68,14 @@ export function SignInPanel({
     setBusy(true); setError(null);
     try {
       const popup = await signInWithGoogle();
-      if (!popup) return; // popup blocked — the page is redirecting instead
+      if (!popup) return; // popup blocked, the page is redirecting instead
 
       /**
        * On success the popup posts back and closes, and onAuthStateChange takes
        * it from there. If it closes WITHOUT a session, nothing else would ever
        * clear this state and the modal sits on "OPENING..." forever. That
        * happens when the user dismisses the Google window, and also when the
-       * popup lands on a different origin — which is what a redirect URL that
+       * popup lands on a different origin, which is what a redirect URL that
        * isn't allow-listed for this host looks like from in here.
        */
       clearInterval(popupWatch.current);

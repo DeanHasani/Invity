@@ -17,7 +17,7 @@ const ROWS: Array<{ label: string; free: string; pro: string }> = [
   { label: "Designs",             free: "8 core",  pro: "All 12" },
   { label: "Title effects",       free: "4 core",  pro: "All 7" },
   { label: "RSVP email alerts",   free: "✔",       pro: "✔" },
-  { label: "Guest lists + CSV export", free: "—",  pro: "✔" },
+  { label: "Guest lists + CSV export", free: "✕",  pro: "✔" },
 ];
 
 export default function Pricing() {
@@ -37,11 +37,11 @@ export default function Pricing() {
         setActivating(true);
         const ok = await awaitProActivation(refetch as any);
         if (ok) toast.success("You're Pro! 🎉 Party without limits.");
-        else toast("Payment received — Pro unlocks within a minute or two.");
+        else toast("Payment received. Pro unlocks within a minute or two.");
         setActivating(false);
       });
     } catch {
-      toast.error("Couldn't load checkout — an ad blocker may be interfering.");
+      toast.error("Couldn't load checkout. An ad blocker may be interfering.");
     } finally {
       setBuyBusy(false);
     }
@@ -110,7 +110,7 @@ export default function Pricing() {
               Invity Pro
             </h1>
             <p className="text-base opacity-80">
-              Invity is free forever — two links a day, party on. Invity Pro removes every limit.
+              Invity is free forever. Two links a day, party on. Invity Pro removes every limit.
             </p>
           </div>
 
@@ -160,7 +160,7 @@ export default function Pricing() {
             </div>
           ) : (
             <>
-              {/* Plan picker — exact prices must match the Paddle checkout */}
+              {/* Plan picker: exact prices must match the Paddle checkout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {([
                   { id: "month" as const, tag: "Monthly", price: PRICE_MONTHLY_LABEL, per: "/ month", note: "Billed monthly. Auto-renews until cancelled." },
@@ -204,7 +204,7 @@ export default function Pricing() {
           <p className="text-xs opacity-50">
             Prices in USD. Taxes may apply and will be calculated at checkout. Payments are
             processed securely by Paddle.com, our merchant of record. Subscriptions auto-renew
-            until cancelled — cancel anytime.{" "}
+            until cancelled, and you can cancel anytime.{" "}
             <Link to="/refunds" className="underline underline-offset-2">14-day money-back guarantee</Link>.
           </p>
         </div>

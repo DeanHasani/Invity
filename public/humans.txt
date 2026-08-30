@@ -1,0 +1,29 @@
+/* TEAM */
+
+  Contact: cardsinvity [at] gmail.com
+  Site: https://www.invity.cards/about
+  Location: Built remotely
+
+/* THANKS */
+
+  Everyone who sent us a bug report, a screenshot of a broken layout,
+  or a note saying the RSVP email arrived before their guest did.
+
+/* SITE */
+
+  Last update: 2026-08-30
+  Language: English
+  Doctype: HTML5
+  Standards: HTML5, CSS3, ECMAScript 2022
+  Components: React, TypeScript, Vite, Tailwind CSS, React Router,
+              GSAP, OGL, Supabase, Paddle, PostHog
+  Software: Visual Studio Code, Git
+
+/* NOTES */
+
+  Invity Cards is a free digital invitation maker. You pick a design,
+  type your event details, and get one link to share. Guests open it
+  and RSVP in a single tap, with no app and no signup.
+
+  No trackers run on an invitation page. If someone sends you a link,
+  opening it sets no analytics cookie and builds no profile of you.

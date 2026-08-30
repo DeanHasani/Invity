@@ -28,7 +28,7 @@ export function UpgradeModal({
   const [phase, setPhase] = useState<Phase>("plan");
   const [busy, setBusy] = useState(false);
 
-  // Opened from a page without the Index message listener — close the loop
+  // Opened from a page without the Index message listener, so close the loop
   // ourselves when the OAuth popup finishes (cross-tab session sync also fires
   // onAuthStateChange, which useSubscription already listens to).
   useEffect(() => {
@@ -40,7 +40,7 @@ export function UpgradeModal({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  // Already Pro (e.g. activated in another tab) — nothing to sell
+  // Already Pro (e.g. activated in another tab), so nothing to sell
   useEffect(() => {
     if (isPro && phase === "plan") onClose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,7 +61,7 @@ export function UpgradeModal({
         }
       });
     } catch {
-      toast.error("Couldn't load checkout — an ad blocker may be interfering.");
+      toast.error("Couldn't load checkout. An ad blocker may be interfering.");
     } finally {
       setBusy(false);
     }
@@ -95,7 +95,7 @@ export function UpgradeModal({
             </p>
             <p className="text-xs opacity-50 text-white">
               {phase === "activating"
-                ? "Hang tight — confirming your subscription."
+                ? "Hang tight, confirming your subscription."
                 : "Pro will unlock within a minute or two. You can keep using Invity meanwhile."}
             </p>
             {phase === "slow" && (
@@ -159,17 +159,17 @@ export function UpgradeModal({
                 className="w-full py-4 text-lg font-bold uppercase tracking-wider transition-colors disabled:opacity-60"
                 style={{ fontFamily: LG_FONT, background: "var(--accent-fill, #F05A28)", color: "var(--accent-fg, #fff)" }}
               >
-                {busy ? "OPENING..." : `GO PRO — ${price}`}
+                {busy ? "OPENING..." : `GO PRO FOR ${price}`}
               </button>
             ) : (
               <SignInPanel
                 heading="Sign In to Go Pro"
-                subheading="Your subscription is tied to this account — sign in first."
+                subheading="Your subscription is tied to this account, so sign in first."
               />
             )}
 
             <p className="text-[10px] opacity-30 text-white">
-              Prices in USD — taxes may apply and are calculated at checkout. Secure checkout by
+              Prices in USD. Taxes may apply and are calculated at checkout. Secure checkout by
               Paddle. Auto-renews until cancelled. Cancel anytime. 14-day money-back guarantee.
             </p>
           </>

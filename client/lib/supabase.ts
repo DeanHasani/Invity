@@ -9,7 +9,7 @@ export const supabase = createClient(
 /**
  * Ensure the visitor has at least an anonymous session for PostgREST access.
  * Creators replace this with a real session when they sign in.
- * Skip on the OAuth callback page — a real session is already being set.
+ * Skip on the OAuth callback page, since a real session is already being set.
  */
 export async function ensureAnonSession() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -21,7 +21,7 @@ ensureAnonSession();
 
 /**
  * Returns the popup so the caller can tell whether it closed without signing
- * in — dismissed by the user, or landed on another origin because the redirect
+ * in, whether dismissed by the user or landed on another origin because the redirect
  * URL isn't allow-listed for this host. Null means we fell back to a full-page
  * redirect and the page is already navigating away.
  */
@@ -50,7 +50,7 @@ export class EmailSignInError extends Error {
 }
 
 /**
- * Step 1 — mail a 6-digit code.
+ * Step 1: mail a 6-digit code.
  *
  * Requires the Supabase "Magic Link" and "Confirm signup" templates to send
  * {{ .Token }} rather than {{ .ConfirmationURL }}; otherwise this sends a link
@@ -76,7 +76,7 @@ export async function sendEmailCode(email: string) {
   }
 }
 
-/** Step 2 — exchange the code for a real session. */
+/** Step 2: exchange the code for a real session. */
 export async function verifyEmailCode(email: string, code: string) {
   const { data, error } = await supabase.auth.verifyOtp({
     email: email.trim().toLowerCase(),

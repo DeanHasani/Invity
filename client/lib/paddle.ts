@@ -26,7 +26,7 @@ export type BillingCycle = "month" | "year";
 
 /**
  * Opens the Paddle overlay checkout for the Pro plan.
- * `onCompleted` fires on Paddle's checkout.completed event — the subscription
+ * `onCompleted` fires on Paddle's checkout.completed event. The subscription
  * row lands via webhook shortly after, so callers should poll (useSubscription).
  * Throws if Paddle.js can't load (commonly ad blockers).
  */
@@ -52,7 +52,7 @@ export async function openProCheckout(
     ],
     customer: { email: user.email },
     // supabase_user_id is how the paddle-webhook edge function links the
-    // subscription back to this account — never remove it.
+    // subscription back to this account. Never remove it.
     customData: { supabase_user_id: user.id, user_email: user.email },
     settings: { displayMode: "overlay", theme: "dark" },
   });
@@ -61,7 +61,7 @@ export async function openProCheckout(
 /** Human-readable reason for a failed portal open, for toasting to the user. */
 const PORTAL_MESSAGES: Record<string, string> = {
   no_subscription: "We couldn't find a subscription on this account.",
-  no_customer_id:  "Your subscription is still finishing setup — try again in a minute.",
+  no_customer_id:  "Your subscription is still finishing setup. Try again in a minute.",
   portal_failed:   "Paddle couldn't open the billing portal. Please email cardsinvity@gmail.com.",
 };
 
@@ -72,7 +72,7 @@ const PORTAL_MESSAGES: Record<string, string> = {
 export async function openBillingPortal(): Promise<string | null> {
   // Opened synchronously, inside the click handler. Browsers (iOS Safari in
   // particular) block window.open once an await has broken the user-gesture
-  // chain — which presents as the button doing nothing at all, with no error.
+  // chain, which presents as the button doing nothing at all, with no error.
   const win = window.open("", "_blank");
   if (win) win.opener = null;
 

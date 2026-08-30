@@ -49,13 +49,13 @@ export default function AboutUs() {
 
           <Block title="What Invity is">
             Invity is a free online invitation maker. You pick a design, type your event details,
-            and get one shareable link — no printing, no app to install, and nothing for your guests
+            and get one shareable link. No printing, no app to install, and nothing for your guests
             to sign up for. They open the link, see your invitation, and RSVP in a single tap.
           </Block>
 
           <Block title="How it works">
             Build your invitation in four short steps: add the details, choose a design, pick a font,
-            then set the animation. Hit create and you get a link you can send anywhere — WhatsApp,
+            then set the animation. Hit create and you get a link you can send anywhere: WhatsApp,
             Messenger, email, or a group chat. Every RSVP lands in your guest list, and you get an
             email the moment someone responds.
           </Block>
@@ -76,7 +76,7 @@ export default function AboutUs() {
               {OCCASIONS.map(o => (
                 <li key={o.href}>
                   {/*
-                    Plain <a>, not <Link> — these pages are pre-rendered static HTML
+                    Plain <a>, not <Link>, because these pages are pre-rendered static HTML
                     served by Vercel, not React routes. A client-side navigation would
                     fall through to the SPA 404.
                   */}
@@ -97,7 +97,7 @@ export default function AboutUs() {
               {CONTACT_EMAIL}
             </a>{" "}
             and we'll get back to you. For anything payment-related you can also use the
-            "Need help?" link in your Paddle receipt — Paddle.com is our merchant of record and
+            "Need help?" link in your Paddle receipt. Paddle.com is our merchant of record and
             handles billing enquiries and refunds.
           </Block>
         </div>

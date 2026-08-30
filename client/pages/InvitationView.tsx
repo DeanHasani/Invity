@@ -70,7 +70,7 @@ export default function InvitationView() {
   useEffect(() => {
     if (!id) { setState("not-found"); return; }
 
-    // Check localStorage first — no round-trip needed if already responded
+    // Check localStorage first, no round-trip needed if already responded
     if (localStorage.getItem(`invity_responded_${id}`)) {
       setState("responded");
       return;
@@ -109,7 +109,7 @@ export default function InvitationView() {
       await supabase.functions.invoke("notify-rsvp", {
         body: { invitation_id: id, name, status, note, viewer_token: getViewerToken() },
       });
-    } catch (_) { /* non-blocking — don't trap the guest on an error */ }
+    } catch (_) { /* non-blocking, don't trap the guest on an error */ }
 
     // Persist response so re-visits show the "already responded" page
     localStorage.setItem(`invity_responded_${id}`, status);
@@ -132,7 +132,7 @@ export default function InvitationView() {
       style={{ background: "#F05A28", color: "#fff" }}
     >
       <h1 className="text-5xl md:text-6xl uppercase" style={{ fontFamily: "'Luckiest Guy', cursive" }}>
-        404 — NOT FOUND
+        404: NOT FOUND
       </h1>
       <p className="text-lg opacity-70" style={{ fontFamily: "'Montserrat', sans-serif" }}>
         This invitation doesn't exist. Maybe the link was mistyped?
@@ -151,7 +151,7 @@ export default function InvitationView() {
     <ErrorPage
       emoji="⌛"
       headline="THIS ONE'S GONE"
-      sub="This invitation expired. Ask the host to send you a fresh link — the party's still on!"
+      sub="This invitation expired. Ask the host to send you a fresh link, the party's still on!"
     />
   );
 

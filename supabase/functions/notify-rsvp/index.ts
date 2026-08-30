@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
   const status = body.status === "accepted" || body.status === "declined" ? body.status : "";
   const viewer_token =
     typeof body.viewer_token === "string" ? body.viewer_token.slice(0, 80) : null;
-  // Optional — guests can skip it. Empty string and absent mean the same thing.
+  // Optional, guests can skip it. Empty string and absent mean the same thing.
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
 
   if (!invitation_id || !name || !status) {
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   }
 
   // Record the RSVP. Older client bundles insert into rsvps directly and call
-  // this function without a viewer_token — skip the insert for those to avoid
+  // this function without a viewer_token, so skip the insert for those to avoid
   // double rows during the rollout window.
   if (viewer_token) {
     const { error: insertError } = await supabase
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
   }
 
   if (!invitation.user_email) {
-    // Legacy anonymous invitation — RSVP recorded, nobody to notify
+    // Legacy anonymous invitation: RSVP recorded, nobody to notify
     return json({ ok: true });
   }
 
@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
 
   if (!res.ok) {
     console.error("Resend error:", await res.text());
-    // RSVP row is already stored — don't fail the guest's action over email
+    // RSVP row is already stored, so don't fail the guest's action over email
     return json({ ok: true, email_sent: false });
   }
 

@@ -3,7 +3,7 @@
 //
 // `hex` paints the page. The `accent*` tokens exist because several surfaces
 // (calendar popover, account menu, sign-in + upgrade modals) are dark panels
-// that sit *on top* of the page — a theme colour used as text there has to stay
+// that sit *on top* of the page, so a theme colour used as text there has to stay
 // readable. For the coloured themes accent === hex, so nothing changes; the
 // black theme swaps in a bright accent so those labels don't vanish.
 // ─────────────────────────────────────────────────────────────────────────────

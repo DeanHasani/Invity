@@ -100,7 +100,7 @@ function useTitleFontSize(title: string): string {
 
 
 // Always wrap every word so every animation/effect has .word-span targets.
-// No trailing &nbsp; — we use a margin-right on the span instead.
+// No trailing &nbsp;, we use a margin-right on the span instead.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -630,7 +630,7 @@ function ScaryCanvas() {
   useEffect(() => {
     const el = ref.current; if (!el) return;
 
-    // Blood drips — single tapered element, no ball
+    // Blood drips: single tapered element, no ball
     [4, 11, 19, 28, 36, 45, 53, 62, 70, 79, 87, 94].forEach(pos => {
       const w      = 4 + Math.random() * 5;
       const r      = Math.round(w / 2);          // tip radius = half the width
@@ -659,7 +659,7 @@ function ScaryCanvas() {
       });
     });
 
-    // Emojis — 4 of each type scattered randomly across the background
+    // Emojis: 4 of each type scattered randomly across the background
     const EMOJIS = [
       ...Array(4).fill("👻"),
       ...Array(4).fill("💀"),
@@ -702,9 +702,9 @@ function ScaryCanvas() {
   );
 }
 
-// ── FUTURISTIC: GridScan — direct WebGL 2.0 port of the React Bits shader ───
+// ── FUTURISTIC: GridScan, a direct WebGL 2.0 port of the React Bits shader ───
 // Raycasts against 4 planes to build a real 3D perspective tunnel.
-// The scan band sweeps through Z (depth) — you see it fly through the grid.
+// The scan band sweeps through Z (depth), so you see it fly through the grid.
 const GRIDSCAN_VERT = `#version 300 es
 in vec2 a_pos;
 void main(){ gl_Position = vec4(a_pos,0.0,1.0); }`;
@@ -907,7 +907,7 @@ function FuturisticCanvas() {
 
     const u = (n: string) => gl.getUniformLocation(prog, n);
 
-    // Set static uniforms — cyan tunnel (#22d3ee in linear sRGB)
+    // Set static uniforms: cyan tunnel (#22d3ee in linear sRGB)
     gl.uniform2f(u("uSkew"),          0, 0);
     gl.uniform1f(u("uTilt"),          0);
     gl.uniform1f(u("uYaw"),           0);
@@ -1138,14 +1138,14 @@ function HackedCanvas() {
   return (
     <>
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
-      {/* outer vignette — same as ReactBits default */}
+      {/* outer vignette: same as ReactBits default */}
       <div className="absolute inset-0 pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,1) 100%)" }} />
     </>
   );
 }
 
-// ── SPACE: Galaxy shader (OGL) — reactbits.dev/backgrounds/galaxy ────────────
+// ── SPACE: Galaxy shader (OGL), reactbits.dev/backgrounds/galaxy ────────────
 
 const GALAXY_VERT = `
 attribute vec2 uv;
@@ -1312,7 +1312,7 @@ function WeddingCanvas() {
         style={{ width: 84, height: "auto", top: -6, left: -6 }}
         onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
       />
-      {/* Same clip, mirrored — reads as a different bouquet angle in the opposite corner */}
+      {/* Same clip, mirrored: reads as a different bouquet angle in the opposite corner */}
       <img
         src="/wedding/flower.svg"
         alt=""
@@ -1587,7 +1587,7 @@ function RsvpZone({
           className="text-xl md:text-2xl uppercase"
           style={{ fontFamily: LG, color: "rgba(255,255,255,0.55)" }}
         >
-          — {finalName}
+          {finalName}
         </p>
         <a
           href="/"
@@ -1621,7 +1621,7 @@ function RsvpZone({
             // Enter sends, Shift+Enter makes a new line
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(true); }
           }}
-          placeholder="Optional — anything they should know?"
+          placeholder="Optional, anything they should know?"
           autoFocus
           rows={2}
           disabled={sending}
@@ -1716,7 +1716,7 @@ function RsvpZone({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Font map — fontId → CSS font-family string
+// Font map: fontId → CSS font-family string
 // ─────────────────────────────────────────────────────────────────────────────
 
 const FONT_FAMILY: Record<string, string> = {
@@ -1761,7 +1761,7 @@ export default function Postcard({
     const content = contentRef.current;
     if (!content) return;
 
-    // All title word spans only — used for assemble & word effects
+    // All title word spans only: used for assemble & word effects
     const titleWords  = () => Array.from(content.querySelectorAll<HTMLElement>(".title-word"));
     const msgWords    = () => Array.from(content.querySelectorAll<HTMLElement>(".msg-word"));
     const effectWords = () => [...titleWords(), ...msgWords()];
@@ -1773,7 +1773,7 @@ export default function Postcard({
       // For all other animations: hide the whole container, reveal as a unit.
       if (animationId === "assemble") {
         gsap.set(content, { opacity: 1 });
-        // Containers must stay visible — only the word/piece children get hidden,
+        // Containers must stay visible, only the word/piece children get hidden,
         // otherwise animating child opacity has no effect inside an opacity:0 parent.
         gsap.set(
           Array.from(content.querySelectorAll<HTMLElement>(".event-title,.event-message")),
@@ -2026,7 +2026,7 @@ export default function Postcard({
         }
 
         case "decrypt":
-          // DecryptedText component handles its own animation — nothing to do here.
+          // DecryptedText component handles its own animation, nothing to do here.
           // We still let the GSAP reveal handle the h1 opacity so it fades in normally
           // before the decrypt effect takes over character-by-character.
           break;
@@ -2036,7 +2036,7 @@ export default function Postcard({
           if (titleEl) {
             const base = invitation.fontColor || "#ffffff";
             // A white highlight is invisible against already-white/bright
-            // text — flip it to a dark glint whenever the base is light.
+            // text, so flip it to a dark glint whenever the base is light.
             const highlight = isLightColor(base) ? "#1a1a1a" : "#ffffff";
             titleEl.style.backgroundImage = `linear-gradient(100deg, ${base} 40%, ${highlight} 50%, ${base} 60%)`;
             titleEl.style.backgroundSize = "250% 100%";
@@ -2112,7 +2112,7 @@ export default function Postcard({
           <ThemeCanvas />
         </div>
 
-        {/* Countdown — live view only */}
+        {/* Countdown: live view only */}
         {isLiveView && (
           <div
             className="absolute top-4 right-4 z-20 text-[10px] md:text-[11px] font-bold tracking-[0.18em] uppercase pointer-events-none select-none"
@@ -2185,7 +2185,7 @@ export default function Postcard({
             style={{ opacity: 0 }}
           >
             {textEffectId === "decrypt" && animationId !== "assemble" ? (
-              /* DecryptedText on the message — starts after the title has mostly resolved */
+              /* DecryptedText on the message: starts after the title has mostly resolved */
               <DecryptedText
                 text={`"${invitation.message}"`}
                 delay={1200}
@@ -2206,7 +2206,7 @@ export default function Postcard({
             )}
           </p>
 
-          {/* Date & Location — only rendered when present */}
+          {/* Date & Location: only rendered when present */}
           {(invitation.date || invitation.location) && (
             <div
               className="meta-row mt-8 flex flex-wrap gap-x-8 gap-y-3 justify-center items-center"
@@ -2226,7 +2226,7 @@ export default function Postcard({
           )}
         </div>
 
-        {/* RSVP — live view only */}
+        {/* RSVP: live view only */}
         {isLiveView && (
           <RsvpZone designId={invitation.designId} onRsvp={onRsvp} />
         )}

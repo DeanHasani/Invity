@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   const { data: { user }, error } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
   if (error || !user) return new Response("Unauthorized", { status: 401, headers: CORS });
 
-  // Cancel any active Paddle subscription BEFORE deleting anything — a deleted
+  // Cancel any active Paddle subscription BEFORE deleting anything, because a deleted
   // account must never keep getting charged.
   const { data: sub } = await supabase
     .from("subscriptions")

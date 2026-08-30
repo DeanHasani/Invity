@@ -50,7 +50,7 @@ export default function RefundPolicy() {
 
           <Block title="14-day money-back guarantee">
             If you're not happy with Invity Pro, you can request a full refund within 14 days of
-            your first purchase — no questions asked. This applies to your first subscription
+            your first purchase, no questions asked. This applies to your first subscription
             payment (monthly or yearly); renewal payments are refundable at our discretion if
             requested within 14 days of the charge.
           </Block>
@@ -63,7 +63,7 @@ export default function RefundPolicy() {
 
           <Block title="Cancelling your subscription">
             You can cancel anytime from the account menu ("Manage Subscription"). Cancellation
-            takes effect at the end of your current billing period — you keep Pro until then, and
+            takes effect at the end of your current billing period, so you keep Pro until then, and
             you won't be charged again. Cancelling is not the same as a refund: if you also want
             your latest payment back and you're within the 14-day window, request a refund as
             described above.

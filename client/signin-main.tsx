@@ -1,5 +1,5 @@
 // Entry for the standalone /signin page (second Vite input alongside index.html).
-// Deliberately minimal — no router, no react-query, no toaster. SignInPanel
+// Deliberately minimal: no router, no react-query, no toaster. SignInPanel
 // needs none of them, and keeping this lean means the page loads far faster
 // than pulling in the whole app bundle just to show two fields.
 import "./global.css";

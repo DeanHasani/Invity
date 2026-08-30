@@ -1,0 +1,48 @@
+# Invity Cards
+
+> A free online invitation maker. Pick a design, type your event details, and
+> get one shareable link. Guests open the link and RSVP in a single tap, with
+> no app to install and no account to create.
+
+Invity Cards turns an event into a single URL like invity.cards/abc123. The
+person hosting builds the invitation in four steps: event details, design,
+font, then an animated title effect. Sharing is just pasting the link into
+WhatsApp, Instagram, iMessage, email, or a group chat. Every response emails
+the host straight away and lands in a guest list they can export to CSV.
+
+Guests never sign up and are never tracked. Analytics load only on the pages
+where invitations are made, never on an invitation itself.
+
+## Plans
+
+- Free: two invitation links per day, each live for 5 hours, core designs, RSVP collection, email alerts. No credit card and no watermark.
+- Pro, $2.99 per month or $20 per year: unlimited invitations, links live for 30 days, every design and title effect, guest list pages, CSV export. Billing runs through Paddle.com as merchant of record, and you can cancel anytime.
+
+## Main pages
+
+- [Home and invitation builder](https://www.invity.cards/): create an invitation and get a shareable RSVP link.
+- [Pricing](https://www.invity.cards/pricing): free tier limits and what Invity Pro adds.
+- [About](https://www.invity.cards/about): what the product does and who to contact.
+- [Sign in](https://www.invity.cards/signin): continue with Google or a 6-digit code sent by email.
+
+## Occasions
+
+- [Birthday invitations](https://www.invity.cards/birthday-invitations): digital birthday party invites with animated titles.
+- [Wedding invitations](https://www.invity.cards/wedding-invitations): wedding e-invites and save the date links.
+- [Baby shower invitations](https://www.invity.cards/baby-shower-invitations): baby showers, sip and sees, first birthdays.
+- [Gender reveal invitations](https://www.invity.cards/gender-reveal-invitations): boy or girl reveals, name reveals, sibling reveals.
+- [Anniversary invitations](https://www.invity.cards/anniversary-invitations): wedding anniversaries, vow renewals, milestones.
+- [Graduation invitations](https://www.invity.cards/graduation-invitations): grad party invites for classmates and family.
+- [RSVP link](https://www.invity.cards/rsvp-link): a plain RSVP link for dinners, meetups, team events, anything.
+
+## Policies
+
+- [Terms of Service](https://www.invity.cards/terms)
+- [Privacy Policy](https://www.invity.cards/privacy)
+- [Refund Policy](https://www.invity.cards/refunds): full refund within 14 days of a first purchase.
+
+## Optional
+
+- [Security contact](https://www.invity.cards/.well-known/security.txt)
+- [Sitemap](https://www.invity.cards/sitemap.xml)
+- Contact: cardsinvity@gmail.com

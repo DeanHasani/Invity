@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 /**
- * Real, indexable pages. Anything not on this list — invitation ids, typos,
- * dead links, whatever gets added later — is treated as non-indexable.
+ * Real, indexable pages. Anything not on this list (invitation ids, typos,
+ * dead links, whatever gets added later) is treated as non-indexable.
  *
  * An allowlist rather than a blocklist on purpose: the failure mode of
  * forgetting to add a route here is a page that doesn't get indexed, which is
@@ -18,7 +18,7 @@ const ORIGIN = "https://www.invity.cards";
 
 /**
  * The SPA serves the same index.html for every path, and that file carries a
- * canonical hardcoded to the homepage. On any other URL that's a lie — it tells
+ * canonical hardcoded to the homepage. On any other URL that's a lie. It tells
  * Google the invite link, the typo and the dead route are all the homepage,
  * which is exactly what produces "Duplicate, Google chose a different
  * canonical" and burns crawl budget on infinite copies of one page.
@@ -47,8 +47,8 @@ export function RouteMeta() {
       return;
     }
 
-    // Not a page we want in the index. Drop the borrowed canonical entirely —
-    // claiming no canonical is far better than claiming the homepage's.
+    // Not a page we want in the index. Drop the borrowed canonical entirely.
+    // Claiming no canonical is far better than claiming the homepage's.
     canonical?.remove();
     if (!robots) {
       robots = document.createElement("meta");

@@ -1,11 +1,11 @@
 // Single source of truth for the throwaway-inbox blocklist. Imported by the
 // edge functions directly and re-exported to the client via /shared/disposableEmail.ts.
-// Keep this file dependency-free — it must compile in both Deno and Vite.
+// Keep this file dependency-free: it must compile in both Deno and Vite.
 //
 // Google sign-in is self-limiting: making a Google account is enough work that
 // farming free invitations isn't worth it. Email codes remove that barrier, so
 // the daily caps in create-invitation are only as strong as the addresses
-// behind them. This list is the cheap 90% — it stops the well-known services
+// behind them. This list is the cheap 90%: it stops the well-known services
 // without pretending to be exhaustive.
 
 export const DISPOSABLE_EMAIL_DOMAINS: readonly string[] = [
@@ -28,7 +28,7 @@ export const DISPOSABLE_EMAIL_DOMAINS: readonly string[] = [
 
 const BLOCKED = new Set(DISPOSABLE_EMAIL_DOMAINS);
 
-/** Loose shape check only — real validation is the code actually arriving. */
+/** Loose shape check only: real validation is the code actually arriving. */
 export function isEmailShaped(email: string): boolean {
   const v = email.trim();
   return v.length >= 6 && v.length <= 254 && /^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(v);

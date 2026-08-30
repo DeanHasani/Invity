@@ -43,7 +43,7 @@ export default function PrivacyPolicy() {
           </p>
 
           <Block title="What we collect">
-            When you sign in with Google, we store your email address to identify your account and enforce fair usage limits. When you create an invitation, we store the invitation content (title, date, location, theme, message) along with your email and an anonymous device identifier. Guests who view an invitation are assigned an anonymous session — no personal data is collected from them unless they submit an RSVP, in which case we store their name and response.
+            When you sign in with Google, we store your email address to identify your account and enforce fair usage limits. When you create an invitation, we store the invitation content (title, date, location, theme, message) along with your email and an anonymous device identifier. Guests who view an invitation are assigned an anonymous session, and no personal data is collected from them unless they submit an RSVP, in which case we store their name and response.
           </Block>
 
           <Block title="How we use it">
@@ -51,11 +51,11 @@ export default function PrivacyPolicy() {
           </Block>
 
           <Block title="Third-party services">
-            Invity is built on Supabase (database and authentication) and uses Google OAuth for sign-in. Your sign-in is handled directly by Google — we never see your Google password. Data is stored on Supabase infrastructure. If you purchase Invity Pro, payment is processed by Paddle.com, our merchant of record — Paddle collects your payment details and billing information directly, and we never see your card number. Please refer to their respective privacy policies for how they handle data.
+            Invity is built on Supabase (database and authentication) and uses Google OAuth for sign-in. Your sign-in is handled directly by Google, so we never see your Google password. Data is stored on Supabase infrastructure. If you purchase Invity Pro, payment is processed by Paddle.com, our merchant of record. Paddle collects your payment details and billing information directly, and we never see your card number. Please refer to their respective privacy policies for how they handle data.
           </Block>
 
           <Block title="Data retention">
-            Invitation links expire automatically — after 5 hours on the free tier, or 30 days for Pro subscribers. Your account data (email, creation history, and subscription status if you're a Pro subscriber) remains stored until you delete your account. You can delete your account at any time from the account menu — this removes your invitations from our database, cancels any active subscription, and signs you out.
+            Invitation links expire automatically, after 5 hours on the free tier or 30 days for Pro subscribers. Your account data (email, creation history, and subscription status if you're a Pro subscriber) remains stored until you delete your account. You can delete your account at any time from the account menu. That removes your invitations from our database, cancels any active subscription, and signs you out.
           </Block>
 
           <Block title="Cookies & storage">

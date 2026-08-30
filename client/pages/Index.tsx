@@ -83,7 +83,7 @@ const FONTS = [
 // a chosen title colour survives that depends on the theme, so the decision has
 // to be a real contrast measurement rather than a luminance guess: black text
 // scores 5.42:1 on orange (fine) but 1.04:1 on the black theme (invisible), and
-// warmgray fails at 3.75:1 too — so "only on the black theme" would be wrong.
+// warmgray fails at 3.75:1 too, so "only on the black theme" would be wrong.
 
 function toRgb(hex: string): [number, number, number] | null {
   const h = hex.replace("#", "");
@@ -121,12 +121,12 @@ function lightPanelColor(themeHex: string): [number, number, number] {
  * Flip to the light panel only in the one case that's genuinely invisible: a
  * near-black title on a near-black panel.
  *
- * A general contrast test was tried first and rejected — mid-tone swatches
+ * A general contrast test was tried first and rejected, because mid-tone swatches
  * (gold, magenta, rose) score below every sensible threshold against mid-tone
  * panels too, so it fired on all five themes and made the panel strobe as you
  * clicked through colours. It also over-reaches: the invitation itself renders
  * on the step-2 design background, not the theme background, so the panel isn't
- * simulating final contrast anyway — it's just showing your colour choice.
+ * simulating final contrast anyway. It's just showing your colour choice.
  */
 const NEAR_BLACK = 0.05; // relative luminance
 
@@ -180,7 +180,7 @@ const BG_PHRASES = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DatePickerInput — custom calendar styled to the Invity orange palette
+// DatePickerInput: custom calendar styled to the Invity orange palette
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -323,7 +323,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TitleEffectPreview — animates the title with the chosen effect (step 4)
+// TitleEffectPreview: animates the title with the chosen effect (step 4)
 // Mounted fresh via key prop on every effect selection so animation replays.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -344,7 +344,7 @@ function TitleEffectPreview({
   const ctxRef  = useRef<gsap.Context | null>(null);
   const display = title.trim() || "YOUR TITLE";
 
-  // Empty deps — component remounts via key prop whenever effectId changes
+  // Empty deps: component remounts via key prop whenever effectId changes
   useEffect(() => {
     const el = wrapRef.current;
     if (!el || effectId === "decrypted") return;
@@ -430,7 +430,7 @@ function TitleEffectPreview({
             gsap.set(el, { opacity: 0, y: 24 });
             tl.to(el, { opacity: 1, y: 0, duration: 1.0 });
             // A white highlight is invisible against already-white/bright
-            // text — flip it to a dark glint whenever the base is light.
+            // text, so flip it to a dark glint whenever the base is light.
             const highlight = isLightColor(fontColor) ? "#1a1a1a" : "#ffffff";
             el.style.backgroundImage = `linear-gradient(100deg, ${fontColor} 40%, ${highlight} 50%, ${fontColor} 60%)`;
             el.style.backgroundSize = "250% 100%";
@@ -557,7 +557,7 @@ function AccountMenu({
     setDeleting(true);
     const { error } = await supabase.functions.invoke("delete-account", { body: {} });
     if (error) {
-      // Most likely the Paddle cancellation failed — deletion was aborted
+      // Most likely the Paddle cancellation failed, so deletion was aborted
       // server-side, so don't sign out and pretend it worked.
       setDeleting(false);
       toast.error("Couldn't delete your account (subscription cancellation failed). Try again or contact us.");
@@ -587,14 +587,14 @@ function AccountMenu({
         style={{ fontFamily: LG_FONT }}
       >
         ACCOUNT
-        {/* 8px layout anchor — SVG floats centered over it */}
+        {/* 8px layout anchor: SVG floats centered over it */}
         <span style={{ position: "relative", display: "inline-block", width: "8px", height: "8px", flexShrink: 0 }}>
           <svg
             width="24" height="24"
             viewBox="0 0 100 100"
             style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", overflow: "visible" }}
           >
-            {/* Dot — shrinks away when splash shows */}
+            {/* Dot: shrinks away when splash shows */}
             <circle
               cx="50" cy="50" r="13"
               fill={fill}
@@ -605,7 +605,7 @@ function AccountMenu({
                 opacity: showSplash ? 0 : 1,
               }}
             />
-            {/* Splash blob — irregular bezier curves, not a star */}
+            {/* Splash blob: irregular bezier curves, not a star */}
             <path
               d="M50,6 C59,1 70,7 71,17 C80,5 93,11 90,24 C99,23 101,38 92,41 C101,50 96,64 84,62 C89,75 80,83 68,77 C66,88 55,91 50,83 C45,91 34,88 32,77 C20,83 11,75 16,62 C4,64 -1,50 8,41 C-1,38 1,23 10,24 C7,11 20,5 29,17 C30,7 41,1 50,6 Z"
               fill={fill}
@@ -726,7 +726,7 @@ function AccountMenu({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Sign-in modal (dialog — stays on the creation page so the form isn't lost)
+// Sign-in modal (dialog, stays on the creation page so the form isn't lost)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GoogleSignInModal({ onClose }: { onClose: () => void }) {
@@ -749,7 +749,7 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
         </button>
 
         {/* SIGNED_IN fires onAuthStateChange, which already closes this and
-            resumes the pending create — no onSignedIn handler needed. */}
+            resumes the pending create, no onSignedIn handler needed. */}
         <SignInPanel />
 
         <p className="text-[10px] opacity-30">
@@ -857,8 +857,8 @@ export default function Index() {
    * are tall enough on mobile to push it off-screen, which meant scrolling down
    * to look and back up to pick again for every single option.
    *
-   * No-op when the preview is already fully visible, so desktop — where it
-   * usually is — doesn't get a pointless jump on every click.
+   * No-op when the preview is already fully visible, so desktop (where it
+   * usually is) doesn't get a pointless jump on every click.
    */
   const revealPreview = () => {
     requestAnimationFrame(() => {
@@ -892,7 +892,7 @@ export default function Index() {
       } else {
         setAuthState("signed-out");
         setUserEmail(null);
-        // Only wipe the builder on an actual sign-out — INITIAL_SESSION also
+        // Only wipe the builder on an actual sign-out, because INITIAL_SESSION also
         // lands here on page load and must not clear a restored draft
         if (event === "SIGNED_OUT") {
           setStep(1);
@@ -938,8 +938,8 @@ export default function Index() {
   // Going Pro lifts the free-tier wall immediately
   useEffect(() => { if (isPro) setRateLimited(false); }, [isPro]);
 
-  // /?upgrade=1 — entry point from the static /pricing page's GO PRO button
-  // /?design=<id> — entry point from occasion landing pages (preselects a design)
+  // /?upgrade=1: entry point from the static /pricing page's GO PRO button
+  // /?design=<id>: entry point from occasion landing pages (preselects a design)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const design = params.get("design");
@@ -964,7 +964,7 @@ export default function Index() {
       const data = JSON.parse(draft) as Partial<CreateInvitationRequest>;
       setFormData(f => ({ ...f, ...data }));
       setStep(4);
-    } catch { /* malformed draft — start fresh */ }
+    } catch { /* malformed draft, start fresh */ }
     window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
@@ -1001,13 +1001,13 @@ export default function Index() {
   const nextStep = () => {
     if (step === 1 && !formData.title.trim()) { toast.error("Add an event title!"); return; }
     if (step === 1 && !formData.message.trim()) { toast.error("Add a message for your guests!"); return; }
-    // Locked designs stay previewable in step 2 — only block moving past it
+    // Locked designs stay previewable in step 2, so only block moving past it
     if (step === 2 && !isPro && PRO_DESIGN_IDS.includes(formData.designId)) { setShowUpgrade(true); return; }
     animateStep(true);
   };
   const prevStep = () => animateStep(false);
 
-  // ── Mutation — creation and all plan/limit checks now live server-side ──────
+  // ── Mutation: creation and all plan/limit checks now live server-side ──────
   const createMutation = useMutation({
     mutationFn: async (data: CreateInvitationRequest) => {
       const { data: res, error } = await supabase.functions.invoke("create-invitation", {
@@ -1030,21 +1030,21 @@ export default function Index() {
       if (err.code === "rate_limited") { setRateLimited(true); return; }
       if (err.code === "premium_required") { setShowUpgrade(true); return; }
       if (err.code === "disposable_email") {
-        toast.error("Throwaway inboxes aren't supported — sign in with a real address.");
+        toast.error("Throwaway inboxes aren't supported. Sign in with a real address.");
         return;
       }
       toast.error("Something went wrong. Try again.");
     },
   });
 
-  // ── Create gate — sign-in is only required at the very last step ──────────
+  // ── Create gate: sign-in is only required at the very last step ──────────
   const pendingCreateRef = useRef(false);
 
   const handleCreate = () => {
-    // Locked effects stay previewable in step 4 — only block the actual create
+    // Locked effects stay previewable in step 4, so only block the actual create
     if (!isPro && PRO_EFFECT_IDS.includes(formData.effectId)) { setShowUpgrade(true); return; }
     if (authState !== "signed-in") {
-      // Google OAuth is blocked inside in-app browsers (LinkedIn, Instagram…) —
+      // Google OAuth is blocked inside in-app browsers (LinkedIn, Instagram…), so
       // hand the draft over to a real browser instead of opening the sign-in modal
       if (detectInApp().inApp) {
         setShowInAppPrompt(true);
@@ -1118,7 +1118,7 @@ export default function Index() {
         TWO LINKS A DAY
       </p>
       <p className="text-base opacity-70 max-w-sm">
-        You've hit your 2-link daily limit. Come back tomorrow — or go Pro and never see this screen again.
+        You've hit your 2-link daily limit. Come back tomorrow, or go Pro and never see this screen again.
       </p>
       {!isPro && (
         <button
@@ -1126,7 +1126,7 @@ export default function Index() {
           className="mt-2 bg-white text-xl py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
           style={{ fontFamily: LG_FONT, color: BRAND }}
         >
-          GO UNLIMITED — $2.99/MO
+          GO UNLIMITED FOR $2.99/MO
         </button>
       )}
       <button
@@ -1204,7 +1204,7 @@ export default function Index() {
             title={step === 1 ? "Start over" : "Back to start"}
             onClick={() => {
               // On step 1 there is nowhere to navigate, so the logo doubles as a
-              // "start fresh" control — wipe any half-typed draft and re-roll the
+              // "start fresh" control: wipe any half-typed draft and re-roll the
               // background phrases rather than sitting inert.
               if (step === 1 || step === 5) { resetBuilder(); return; }
               gsap.killTweensOf(containerRef.current);
@@ -1241,7 +1241,7 @@ export default function Index() {
           </div>
         </div>
         <div className="text-right pointer-events-auto space-y-2">
-          {/* Sign in / Account — above phrase + dots */}
+          {/* Sign in / Account: above phrase + dots */}
           {authState === "signed-in" ? (
             <AccountMenu
               email={userEmail ?? ""}
@@ -1259,7 +1259,7 @@ export default function Index() {
               Sign In
             </button>
           )}
-          {/* Phrase + step dots — unchanged */}
+          {/* Phrase + step dots: unchanged */}
           <p className="font-bold uppercase text-[11px] md:text-sm tracking-widest opacity-90">
             {STEP_PHRASES[step]?.[phraseIndices[step]] ?? ""}
           </p>
@@ -1274,7 +1274,7 @@ export default function Index() {
         </div>
       </header>
 
-      {/* ── Side nav buttons — hidden on mobile, shown md+ ── */}
+      {/* ── Side nav buttons: hidden on mobile, shown md+ ── */}
       {step < 5 && (
         <>
           {step > 1 && (
@@ -1325,14 +1325,14 @@ export default function Index() {
               {/*
                 Plain-language statement of what this is. The equivalent copy
                 used to live only in index.html's pre-render block, which React
-                replaces on mount — so crawlers saw it but people never did.
+                replaces on mount, so crawlers saw it but people never did.
                 Google's OAuth brand review rejected the app twice for exactly
                 that: a reviewer landed on a bare form with no app name in body
                 text and nothing explaining the product.
               */}
               <p className="text-sm md:text-base opacity-85 leading-relaxed max-w-xl">
                 <strong className="font-bold">Invity</strong> is a free digital invitation maker.
-                Fill in your event, pick a design, and get one link to share — your guests open it
+                Fill in your event, pick a design, and get one link to share. Your guests open it
                 and RSVP in a tap, with no app and no sign-up.{" "}
                 <Link to="/about" className="underline underline-offset-2 hover:opacity-100">
                   More about Invity
@@ -1401,7 +1401,7 @@ export default function Index() {
                       disabled={o.pro && !isPro}
                       style={{ color: "#111", background: "#fff" }}
                     >
-                      {o.label}{o.pro && !isPro ? " — Pro" : ""}
+                      {o.label}{o.pro && !isPro ? " (Pro)" : ""}
                     </option>
                   ))}
                 </select>
@@ -1428,7 +1428,7 @@ export default function Index() {
               </h2>
               {/* The grid and the opened design share one box: the grid fades and
                   shrinks in place while the opened tile expands over it from the
-                  top-left. No timers — the two are just crossfaded, so a fast
+                  top-left. No timers: the two are just crossfaded, so a fast
                   double-tap can't leave it stuck half-open. */}
               <div className="relative">
                 <div
@@ -1512,8 +1512,8 @@ export default function Index() {
                         &times;
                       </button>
 
-                      {/* The design's own animated canvas — the same one playing
-                          on the page behind it — running inside the box. No
+                      {/* The design's own animated canvas, the same one playing
+                          on the page behind it, running inside the box. No
                           title, no words: this is a clear look at the design. */}
                       {(() => {
                         const OpenedCanvas = CANVAS_MAP[opened.id];
@@ -1574,7 +1574,7 @@ export default function Index() {
                 })}
               </div>
 
-              {/* Color picker + preview — always visible below the grid */}
+              {/* Color picker + preview: always visible below the grid */}
               <div ref={previewRef} className={PREVIEW_PANEL_CLS} style={PREVIEW_PANEL_STYLE}>
                 <p
                   className="uppercase text-center leading-none"
@@ -1662,7 +1662,7 @@ export default function Index() {
                 })}
               </div>
 
-              {/* Preview panel — always visible below the grid */}
+              {/* Preview panel: always visible below the grid */}
               {(() => {
                 const selEffect = EFFECTS.find(e => e.id === formData.effectId) ?? EFFECTS[0];
                 return (
@@ -1709,7 +1709,7 @@ export default function Index() {
                   if (navigator.clipboard?.writeText) {
                     navigator.clipboard.writeText(shareUrl).catch(() => fallbackCopy(shareUrl));
                   } else { fallbackCopy(shareUrl); }
-                  toast.success("Link copied — paste it in Instagram!");
+                  toast.success("Link copied. Paste it in Instagram!");
                 };
                 return (
                   <div className="p-5 md:p-7 bg-white text-black space-y-3">
@@ -1771,7 +1771,7 @@ export default function Index() {
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                           </svg>
                         </a>
-                        {/* Instagram — copy + toast (no direct share URL) */}
+                        {/* Instagram: copy + toast (no direct share URL) */}
                         <button
                           onClick={igCopy}
                           className="flex-1 flex items-center justify-center py-3 transition-opacity hover:opacity-80"
@@ -1872,7 +1872,7 @@ export default function Index() {
         <SiteFooter variant="compact" />
       </div>
 
-      {/* Footer — desktop only, mobile uses the bottom nav bar */}
+      {/* Footer: desktop only, mobile uses the bottom nav bar */}
       <SiteFooter variant="desktop" />
 
 
@@ -1881,7 +1881,7 @@ export default function Index() {
         <GoogleSignInModal onClose={() => { pendingCreateRef.current = false; setShowSignIn(false); }} />
       )}
 
-      {/* In-app browser hand-off — shown only when CREATE needs Google auth */}
+      {/* In-app browser hand-off: shown only when CREATE needs Google auth */}
       {showInAppPrompt && (
         <InAppBrowserBanner
           dismissible

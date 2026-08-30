@@ -34,7 +34,7 @@ export function InAppBrowserBanner({
   onDismiss,
 }: {
   dismissible?: boolean;
-  /** URL to open in the external browser — defaults to the current page */
+  /** URL to open in the external browser, defaults to the current page */
   url?: string;
   onDismiss?: () => void;
 }) {

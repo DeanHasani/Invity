@@ -6,7 +6,7 @@ import { capturePageview, identifyUser, resetAnalytics } from "@/lib/analytics";
 /**
  * Records builder pageviews and ties them to an account once someone signs in.
  *
- * Invitation pages emit nothing — capturePageview ignores untracked paths, and
+ * Invitation pages emit nothing. capturePageview ignores untracked paths, and
  * identify is a no-op until analytics has actually started, so a guest who
  * happens to hold a session still doesn't get profiled while viewing a link.
  */

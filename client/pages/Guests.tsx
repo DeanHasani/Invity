@@ -97,7 +97,7 @@ export default function Guests() {
     try {
       const { error } = await supabase.functions.invoke("delete-invitation", { body: { id } });
       if (error) throw error;
-      toast.success("Link deleted — it's dead immediately.");
+      toast.success("Link deleted. It's gone immediately.");
       await refetch();
     } catch (e) {
       console.error("[guests] delete failed:", e);
@@ -170,7 +170,7 @@ export default function Guests() {
             </div>
           )}
 
-          {/* Free user — locked preview */}
+          {/* Free user: locked preview */}
           {user && !isPro && (
             <div className="border-2 border-white/40 bg-black/20 p-8 space-y-5 relative overflow-hidden">
               <div className="space-y-3 select-none" style={{ filter: "blur(6px)", opacity: 0.5 }} aria-hidden>
@@ -189,13 +189,13 @@ export default function Guests() {
                   className="bg-white text-lg py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
                   style={{ fontFamily: LG_FONT, color: theme.hex }}
                 >
-                  GO PRO — $2.99/MO
+                  GO PRO FOR $2.99/MO
                 </button>
               </div>
             </div>
           )}
 
-          {/* Pro user — the real lists */}
+          {/* Pro user: the real lists */}
           {user && isPro && (
             isLoading ? (
               <p className="text-xl uppercase animate-pulse" style={{ fontFamily: LG_FONT }}>

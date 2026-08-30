@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
   const id = typeof body?.id === "string" ? body.id.trim().slice(0, 40) : "";
   if (!id) return json({ error: "invalid_input" }, 400);
 
-  // Ownership check against the caller's own email — the service-role client
+  // Ownership check against the caller's own email, because the service-role client
   // bypasses RLS, so this is the only thing standing between a user and someone
   // else's invitation.
   const { data: invitation } = await supabase

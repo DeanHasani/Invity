@@ -81,7 +81,7 @@ export function SiteFooter({ variant, current }: { variant: Variant; current?: s
     );
   }
 
-  // "page" — sits at the end of the sub-page content
+  // "page": sits at the end of the sub-page content
   return (
     <footer className="relative z-10 w-full px-6 pb-10 pt-4">
       <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-center gap-x-4 gap-y-2">

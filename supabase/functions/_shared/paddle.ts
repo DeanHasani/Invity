@@ -4,13 +4,13 @@ const RAW_PADDLE_API_KEY = Deno.env.get("PADDLE_API_KEY") ?? "";
 
 // A trailing \r or \n (very easy to introduce setting secrets from a CRLF file
 // on Windows) or accidental surrounding quotes make the Authorization header
-// invalid — Paddle rejects it with 403 authentication_malformed, which reads
+// invalid. Paddle rejects it with 403 authentication_malformed, which reads
 // like a permissions problem rather than a whitespace one.
 const PADDLE_API_KEY = RAW_PADDLE_API_KEY.trim().replace(/^["']|["']$/g, "");
 
 if (PADDLE_API_KEY !== RAW_PADDLE_API_KEY) {
   console.warn(
-    "paddle: PADDLE_API_KEY had surrounding whitespace/quotes and was normalised — " +
+    "paddle: PADDLE_API_KEY had surrounding whitespace/quotes and was normalised. " +
       "re-set the secret with a clean value.",
   );
 }
@@ -25,7 +25,7 @@ const NORMALISED_ENV = (RAW_PADDLE_ENV ?? "").trim().toLowerCase();
 export const PADDLE_ENV: "sandbox" | "production" =
   NORMALISED_ENV === "production" ? "production" : "sandbox";
 
-/** False when PADDLE_ENV is set to something we don't recognise — callers should surface this. */
+/** False when PADDLE_ENV is set to something we don't recognise, so callers should surface this. */
 export const PADDLE_ENV_RECOGNISED =
   NORMALISED_ENV === "production" || NORMALISED_ENV === "sandbox" || RAW_PADDLE_ENV === undefined;
 
@@ -34,7 +34,7 @@ export const PADDLE_API_BASE =
 
 if (!PADDLE_ENV_RECOGNISED) {
   console.error(
-    `paddle: PADDLE_ENV=${JSON.stringify(RAW_PADDLE_ENV)} is not "sandbox" or "production" — ` +
+    `paddle: PADDLE_ENV=${JSON.stringify(RAW_PADDLE_ENV)} is not "sandbox" or "production". ` +
       `falling back to ${PADDLE_API_BASE}`,
   );
 }

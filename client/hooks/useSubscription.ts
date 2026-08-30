@@ -7,7 +7,7 @@ import type { Subscription } from "@shared/api";
 /**
  * The signed-in user's subscription state, kept fresh across auth changes.
  * Guests and anonymous sessions always resolve to the free plan.
- * NOTE: this is UI state only — real enforcement lives in the
+ * NOTE: this is UI state only. Real enforcement lives in the
  * create-invitation edge function and RLS.
  */
 export function useSubscription() {
@@ -62,7 +62,7 @@ export function useSubscription() {
 /**
  * After checkout.completed, waits for the webhook-written subscription row.
  * Resolves true once Pro is active; false after ~60s without it (payment is
- * still fine — the webhook is just slow; UI should say "activating shortly").
+ * still fine, the webhook is just slow; UI should say "activating shortly").
  */
 export async function awaitProActivation(
   refetch: () => Promise<{ data?: Subscription | null | undefined }>,
@@ -71,7 +71,7 @@ export async function awaitProActivation(
     try {
       const { data } = await refetch();
       if (isProStatus(data?.status)) return true;
-    } catch { /* transient — keep polling */ }
+    } catch { /* transient, keep polling */ }
     await new Promise((r) => setTimeout(r, 2000));
   }
   return false;

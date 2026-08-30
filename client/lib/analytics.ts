@@ -4,13 +4,13 @@ const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 
 /**
  * Served from our own origin and proxied to PostHog by the /ingest rewrites in
- * vercel.json, so domain-based ad blockers don't filter it — roughly a fifth to
+ * vercel.json, so domain-based ad blockers don't filter it. Roughly a fifth to
  * a third of visitors run one, and a blocked load fails silently by design.
  *
  * Those rewrites must stay above the /(.*) catch-all: below it, every analytics
  * request is answered with index.html and tracking breaks without an error.
  *
- * ui_host is separate because the proxy only carries ingestion — toolbar and
+ * ui_host is separate because the proxy only carries ingestion, so toolbar and
  * session-replay links still need to point at the real dashboard.
  */
 const HOST = (import.meta.env.VITE_POSTHOG_HOST as string) || "/ingest";
@@ -20,8 +20,8 @@ const UI_HOST = "https://eu.posthog.com";
  * Builder surfaces only.
  *
  * Invitation pages are deliberately absent. Guests open a link without ever
- * signing up to anything, and PostHog is never loaded while one is on screen —
- * no cookie is set, no profile exists, and the library isn't even downloaded
+ * signing up to anything, and PostHog is never loaded while one is on screen.
+ * No cookie is set, no profile exists, and the library isn't even downloaded
  * for someone who only came to say whether they're coming.
  *
  * An allowlist, so a route added later is untracked until someone decides it
@@ -37,8 +37,8 @@ export const isTrackedPath = (path: string) => TRACKED.has(path);
 /**
  * posthog-js is ~250 kB and it is imported dynamically on purpose. A static
  * import puts it in the chunk both entries share, which means every guest
- * opening an invitation downloads an analytics library that — by the rule
- * above — is never allowed to run. Loading it on the first tracked pageview
+ * opening an invitation downloads an analytics library that, by the rule
+ * above, is never allowed to run. Loading it on the first tracked pageview
  * keeps it off the pages that make up most of the traffic.
  */
 let ph: PostHog | null = null;
@@ -78,7 +78,7 @@ export function capturePageview(path: string) {
 }
 
 /**
- * These never trigger the load themselves — if the visitor hasn't been on a
+ * These never trigger the load themselves. If the visitor hasn't been on a
  * tracked page, nothing is recorded and nothing is fetched. Stops an event
  * fired from a shared component quietly instrumenting an invitation page.
  */

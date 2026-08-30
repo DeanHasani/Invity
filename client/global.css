@@ -4,9 +4,9 @@
 @keyframes canvasFadeIn { from { opacity:0 } to { opacity:1 } }
 
 /* Global (not Postcard-local) so it also applies when a design's canvas is
-   previewed standalone in the builder — e.g. the step-2 background preview,
+   previewed standalone in the builder, e.g. the step-2 background preview,
    which renders CANVAS_MAP[id] directly without the full Postcard wrapper.
-   Animates `left` (percentage of the CONTAINING card, i.e. the screen) —
+   Animates `left` (percentage of the CONTAINING card, i.e. the screen),
    not transform:translateX, whose percentages resolve against the train's
    own small width and fell far short of the far edge on wide viewports. */
 @keyframes trainmove {
@@ -22,7 +22,7 @@
   from { opacity:0; transform:scale(0.32); }
   to   { opacity:1; transform:scale(1); }
 }
-/* Collapsing back — the grid settles in rather than snapping. */
+/* Collapsing back: the grid settles in rather than snapping. */
 @keyframes tileGridReturn {
   from { opacity:0; transform:scale(0.93); }
   to   { opacity:1; transform:scale(1); }

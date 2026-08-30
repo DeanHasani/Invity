@@ -1,5 +1,5 @@
 // Paddle → Supabase subscription state sync.
-// Deployed with verify_jwt = false (see supabase/config.toml) — authentication
+// Deployed with verify_jwt = false (see supabase/config.toml), so authentication
 // is the Paddle-Signature HMAC, verified against the raw request body.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyPaddleSignature } from "../_shared/paddle.ts";
@@ -27,7 +27,7 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
-  // Raw body FIRST — the signature covers the exact bytes Paddle sent
+  // Raw body FIRST: the signature covers the exact bytes Paddle sent
   const rawBody = await req.text();
   const valid = await verifyPaddleSignature(
     rawBody,
@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
 
   if (!userId) {
     // Subscription not created through our checkout (dashboard/simulator).
-    // Return 200 — a 4xx/5xx would make Paddle retry forever.
-    console.error(`paddle-webhook: ${eventType} for ${data.id} has no supabase_user_id custom_data — ignored`);
+    // Return 200, because a 4xx/5xx would make Paddle retry forever.
+    console.error(`paddle-webhook: ${eventType} for ${data.id} has no supabase_user_id custom_data, ignored`);
     return json({ ignored: true, reason: "missing_custom_data" });
   }
 
