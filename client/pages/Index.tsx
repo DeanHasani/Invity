@@ -1384,13 +1384,12 @@ export default function Index() {
                   Link expires after
                 </label>
                 <select
-                  value={isPro ? formData.expiryId : FREE_EXPIRY_ID}
-                  disabled={!isPro}
+                  // Free state still holds the Pro default (30d) until they pick; the server clamps it to 5h
+                  value={isPro || !EXPIRY_OPTIONS.find(o => o.id === formData.expiryId)?.pro ? formData.expiryId : FREE_EXPIRY_ID}
                   onChange={e => setFormData(f => ({ ...f, expiryId: e.target.value }))}
                   className={cn(
                     INPUT_CLS,
-                    "text-base py-4 h-auto w-full appearance-none cursor-pointer",
-                    !isPro && "opacity-50 cursor-not-allowed"
+                    "text-base py-4 h-auto w-full appearance-none cursor-pointer"
                   )}
                   style={{ colorScheme: "dark" }}
                 >
@@ -1401,7 +1400,7 @@ export default function Index() {
                       disabled={o.pro && !isPro}
                       style={{ color: "#111", background: "#fff" }}
                     >
-                      {o.label}{o.pro && !isPro ? " (Pro)" : ""}
+                      {o.label}{o.pro && !isPro ? "  🔒 PRO" : ""}
                     </option>
                   ))}
                 </select>
@@ -1411,7 +1410,7 @@ export default function Index() {
                     onClick={() => setShowUpgrade(true)}
                     className="text-[11px] opacity-60 hover:opacity-100 transition-opacity text-left underline underline-offset-2"
                   >
-                    Choose how long your link lasts with Pro
+                    Keep links up to 30 days with Pro
                   </button>
                 )}
               </div>

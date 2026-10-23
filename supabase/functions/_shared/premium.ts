@@ -30,14 +30,14 @@ export const FREE_EXPIRY_MS = 5 * 3_600_000;            // 5 hours
 export const PRO_EXPIRY_MS = 30 * 24 * 3_600_000;       // 30 days, Pro default AND max
 
 /**
- * Link lifetimes offered in the builder. Free is pinned to the first entry;
- * Pro picks any of them and defaults to 30 days, which keeps the advertised
+ * Link lifetimes offered in the builder. Free picks the non-pro entries and
+ * defaults to the first; Pro picks any of them and defaults to 30 days, which keeps the advertised
  * "30-day links" claim true. create-invitation validates against this list:
  * the dropdown is UI, this is the contract.
  */
 export const EXPIRY_OPTIONS: readonly { id: string; label: string; ms: number; pro: boolean }[] = [
   { id: "5h",  label: "5 hours",  ms: FREE_EXPIRY_MS,          pro: false },
-  { id: "10h", label: "10 hours", ms: 10 * 3_600_000,          pro: true  },
+  { id: "10h", label: "10 hours", ms: 10 * 3_600_000,          pro: false },
   { id: "24h", label: "24 hours", ms: 24 * 3_600_000,          pro: true  },
   { id: "7d",  label: "7 days",   ms: 7 * 24 * 3_600_000,      pro: true  },
   { id: "30d", label: "30 days",  ms: PRO_EXPIRY_MS,           pro: true  },
@@ -52,8 +52,8 @@ export const PRO_DEFAULT_EXPIRY_ID = "30d";
  * a free account, falls back to the free lifetime rather than erroring.
  */
 export function resolveExpiryMs(expiryId: string | null | undefined, isPro: boolean): number {
-  if (!isPro) return FREE_EXPIRY_MS;
   const opt = EXPIRY_OPTIONS.find(o => o.id === expiryId);
+  if (!isPro) return opt && !opt.pro ? opt.ms : FREE_EXPIRY_MS;
   if (!opt) return PRO_EXPIRY_MS;
   return opt.ms;
 }
