@@ -4,6 +4,11 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// Hard ceiling per invitation. viewer_token is chosen by the caller, so dedupe
+// alone can't stop one person minting fake guests (and host emails) forever.
+// Generous enough for a big wedding.
+const MAX_RSVPS_PER_INVITATION = 500;
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -36,15 +41,18 @@ Deno.serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const invitation_id = typeof body.invitation_id === "string" ? body.invitation_id : "";
-  const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+  const invitation_id = typeof body.invitation_id === "string" ? body.invitation_id.slice(0, 40) : "";
+  // Control characters stripped so the name can't break the email subject or the CSV export
+  const name = typeof body.name === "string" ? body.name.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 80) : "";
   const status = body.status === "accepted" || body.status === "declined" ? body.status : "";
   const viewer_token =
-    typeof body.viewer_token === "string" ? body.viewer_token.slice(0, 80) : null;
+    typeof body.viewer_token === "string" ? body.viewer_token.trim().slice(0, 80) : "";
   // Optional, guests can skip it. Empty string and absent mean the same thing.
   const note = typeof body.note === "string" ? body.note.trim().slice(0, 500) : "";
 
-  if (!invitation_id || !name || !status) {
+  // viewer_token is required: without it there is no row and no dedupe, so
+  // every request would be a free email to the host.
+  if (!invitation_id || !name || !status || !viewer_token) {
     return json({ error: "missing_fields" }, 400);
   }
 
@@ -64,22 +72,26 @@ Deno.serve(async (req) => {
     return json({ error: "expired" }, 410);
   }
 
-  // Record the RSVP. Older client bundles insert into rsvps directly and call
-  // this function without a viewer_token, so skip the insert for those to avoid
-  // double rows during the rollout window.
-  if (viewer_token) {
-    const { error: insertError } = await supabase
-      .from("rsvps")
-      .insert({ invitation_id, name, status, viewer_token, note: note || null });
+  // shortcut: count-then-insert can overshoot the cap by a few under concurrency; fine for an abuse ceiling.
+  const { count } = await supabase
+    .from("rsvps")
+    .select("id", { count: "exact", head: true })
+    .eq("invitation_id", invitation_id);
+  if ((count ?? 0) >= MAX_RSVPS_PER_INVITATION) {
+    return json({ error: "too_many_rsvps" }, 429);
+  }
 
-    if (insertError) {
-      // 23505 = unique violation → this device already responded; don't re-email
-      if (insertError.code === "23505") {
-        return json({ ok: true, duplicate: true });
-      }
-      console.error("rsvp insert failed:", insertError);
-      return json({ error: "rsvp_failed" }, 500);
+  const { error: insertError } = await supabase
+    .from("rsvps")
+    .insert({ invitation_id, name, status, viewer_token, note: note || null });
+
+  if (insertError) {
+    // 23505 = unique violation → this device already responded; don't re-email
+    if (insertError.code === "23505") {
+      return json({ ok: true, duplicate: true });
     }
+    console.error("rsvp insert failed:", insertError);
+    return json({ error: "rsvp_failed" }, 500);
   }
 
   if (!invitation.user_email) {

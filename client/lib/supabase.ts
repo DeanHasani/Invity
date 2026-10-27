@@ -1,9 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { isDisposableEmail, isEmailShaped } from "@shared/disposableEmail";
 
+// PKCE, not the implicit default: implicit accepts any #access_token in the URL
+// on any page, so a crafted link could swap a visitor into someone else's
+// account. PKCE only completes a sign-in this browser started.
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL as string,
   import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+  { auth: { flowType: "pkce" } },
 );
 
 /**

@@ -23,6 +23,7 @@ import { CANVAS_MAP, DESIGN_BG, DecryptedText, isLightColor } from "@/components
 import { InAppBrowserBanner, detectInApp } from "@/components/InAppBrowserBanner";
 import { AppTheme, THEME_COLORS, THEME_ORDER, readStoredTheme, themeVars } from "@/lib/theme";
 import { SiteFooter } from "@/components/SiteFooter";
+import { FloatingPhrases } from "@/components/FloatingPhrases";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data
@@ -156,29 +157,6 @@ const STEP_PHRASES: Record<number, string[]> = {
   5: ["YOU DID IT!", "PARTY TIME!", "READY TO SEND", "BOOM!"],
 };
 
-const BG_PHRASES = [
-  "CREATE YOUR INVITATION",
-  "INVITE YOUR COWORKERS",
-  "INVITE YOUR GANG",
-  "HAVE THE FUN OF YOUR LIFE",
-  "MAKE IT A NIGHT TO REMEMBER",
-  "YOUR PARTY YOUR RULES",
-  "GOOD TIMES INCOMING",
-  "BRING THE CROWD TOGETHER",
-  "SEND THE INVITE",
-  "DON'T CELEBRATE ALONE",
-  "MAKE MEMORIES HAPPEN",
-  "THE MORE THE MERRIER",
-  "GATHER YOUR PEOPLE",
-  "EVERY GREAT PARTY STARTS HERE",
-  "START THE PARTY",
-  "MAKE SOME NOISE",
-  "IT'S PARTY TIME",
-  "SPREAD THE WORD",
-  "LET THEM KNOW",
-  "THE GANG'S ALL HERE",
-];
-
 // ─────────────────────────────────────────────────────────────────────────────
 // DatePickerInput: custom calendar styled to the Invity orange palette
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,6 +230,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
             <button
               type="button"
               onClick={() => shiftMonth(-1)}
+              aria-label="Previous month"
               className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xl leading-none"
             >
               ‹
@@ -262,6 +241,7 @@ function DatePickerInput({ value, onChange }: { value: string; onChange: (v: str
             <button
               type="button"
               onClick={() => shiftMonth(1)}
+              aria-label="Next month"
               className="w-8 h-8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors text-xl leading-none"
             >
               ›
@@ -730,6 +710,12 @@ function AccountMenu({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function GoogleSignInModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-6"
@@ -737,12 +723,16 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Sign in"
         className="w-full max-w-sm flex flex-col items-center text-center gap-6 p-8 relative"
         style={{ background: "var(--surface)", border: "2px solid rgba(var(--accent-rgb),0.45)" }}
         onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-3 right-4 text-white/30 hover:text-white transition-colors text-2xl leading-none"
         >
           ×
@@ -756,71 +746,6 @@ function GoogleSignInModal({ onClose }: { onClose: () => void }) {
           We only use your email to send RSVP notifications.
         </p>
       </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Animated background phrases
-// ─────────────────────────────────────────────────────────────────────────────
-
-type FloatingPhrase = { id: number; text: string; x: number; y: number; scale: number; visible: boolean };
-let _phraseCounter = 0;
-
-function FloatingPhrases({ active }: { active: boolean }) {
-  const [phrases, setPhrases] = useState<FloatingPhrase[]>([]);
-
-  useEffect(() => {
-    if (!active) { setPhrases([]); return; }
-
-    const spawn = () => {
-      const id = _phraseCounter++;
-      // Keep phrases in the left/right margins so they never land over the form
-      const leftSide = Math.random() < 0.5;
-      const p: FloatingPhrase = {
-        id,
-        text: BG_PHRASES[Math.floor(Math.random() * BG_PHRASES.length)],
-        x: leftSide ? 2 + Math.random() * 14 : 82 + Math.random() * 14,
-        y: 8 + Math.random() * 78,
-        scale: 0.7 + Math.random() * 0.8,
-        visible: false,
-      };
-      setPhrases(prev => [...prev.slice(-6), p]);
-      requestAnimationFrame(() => requestAnimationFrame(() =>
-        setPhrases(prev => prev.map(q => q.id === id ? { ...q, visible: true } : q))
-      ));
-      setTimeout(() => {
-        setPhrases(prev => prev.map(q => q.id === id ? { ...q, visible: false } : q));
-        setTimeout(() => setPhrases(prev => prev.filter(q => q.id !== id)), 850);
-      }, 3000);
-    };
-
-    spawn();
-    const iv = setInterval(spawn, 2000);
-    return () => { clearInterval(iv); setPhrases([]); };
-  }, [active]);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-      {phrases.map(p => (
-        <div
-          key={p.id}
-          className="absolute uppercase select-none"
-          style={{
-            fontFamily: LG_FONT,
-            color: "rgba(255,255,255,0.35)",
-            fontSize: `clamp(0.75rem, ${1.7 * p.scale}vw, ${1.3 * p.scale}rem)`,
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            transform: `translate(-50%, -50%) scale(${p.visible ? 1 : 0.85})`,
-            opacity: p.visible ? 1 : 0,
-            transition: "opacity 0.85s ease, transform 0.85s ease",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {p.text}
-        </div>
-      ))}
     </div>
   );
 }

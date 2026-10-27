@@ -7,6 +7,7 @@ import { UpgradeModal } from "@/components/UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase, signInWithGoogle } from "@/lib/supabase";
 import { THEME_COLORS, readStoredTheme } from "@/lib/theme";
+import { csvEscape } from "@/lib/utils";
 
 const LG_FONT = "'Luckiest Guy', cursive";
 
@@ -37,10 +38,6 @@ type RsvpRow = {
   created_at?: string | null;
 };
 
-function csvEscape(v: string): string {
-  return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-}
-
 function downloadCsv(invitation: InvitationRow, rsvps: RsvpRow[]) {
   const lines = ["guest_name,status,note,responded_at"];
   for (const r of rsvps) {
@@ -61,7 +58,7 @@ export default function Guests() {
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [signingIn, setSigningIn] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["guest-lists", user?.email],
     enabled: !!user && isPro,
     queryFn: async () => {
@@ -201,6 +198,19 @@ export default function Guests() {
               <p className="text-xl uppercase animate-pulse" style={{ fontFamily: LG_FONT }}>
                 Loading...
               </p>
+            ) : isError ? (
+              <div role="alert" className="border-2 border-white/40 bg-black/20 p-8 text-center space-y-4">
+                <p className="text-xl uppercase" style={{ fontFamily: LG_FONT }}>
+                  Couldn't load your guest lists
+                </p>
+                <button
+                  onClick={() => refetch()}
+                  className="bg-white text-lg py-4 px-10 uppercase tracking-wider hover:bg-white/90 transition-colors"
+                  style={{ fontFamily: LG_FONT, color: theme.hex }}
+                >
+                  Try again
+                </button>
+              </div>
             ) : !data?.invitations.length ? (
               <div className="border-2 border-white/40 bg-black/20 p-8 text-center space-y-4">
                 <p className="text-xl uppercase" style={{ fontFamily: LG_FONT }}>

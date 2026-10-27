@@ -2,13 +2,13 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { handleCreateInvitation, handleGetInvitation } from "./routes/invitations";
 
 export function createServer() {
   const app = express();
 
-  // Middleware
-  app.use(cors());
+  // Middleware. cors is scoped to /api: in dev this app runs inside Vite, and
+  // a global wildcard would also stamp Vite's static file responses.
+  app.use("/api", cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -19,8 +19,6 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
-  app.post("/api/invitations", handleCreateInvitation);
-  app.get("/api/invitations/:id", handleGetInvitation);
 
   return app;
 }

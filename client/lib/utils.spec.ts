@@ -1,5 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { cn } from "./utils";
+import { cn, csvEscape } from "./utils";
+
+describe("csvEscape", () => {
+  it("neutralizes formula prefixes", () => {
+    expect(csvEscape("=1+1")).toBe("'=1+1");
+    expect(csvEscape("+1")).toBe("'+1");
+    expect(csvEscape("-1")).toBe("'-1");
+    expect(csvEscape("@SUM(A1)")).toBe("'@SUM(A1)");
+  });
+
+  it("quotes commas, quotes, CR and LF", () => {
+    expect(csvEscape("a,b")).toBe('"a,b"');
+    expect(csvEscape('say "hi"')).toBe('"say ""hi"""');
+    expect(csvEscape("a\rb")).toBe('"a\rb"');
+    expect(csvEscape("a\nb")).toBe('"a\nb"');
+  });
+
+  it("leaves plain text alone", () => {
+    expect(csvEscape("Sarah")).toBe("Sarah");
+    expect(csvEscape("")).toBe("");
+  });
+});
 
 describe("cn function", () => {
   it("should merge classes correctly", () => {

@@ -32,7 +32,9 @@ export function FloatingPhrases({ active }: { active: boolean }) {
   const [phrases, setPhrases] = useState<FloatingPhrase[]>([]);
 
   useEffect(() => {
-    if (!active) { setPhrases([]); return; }
+    // Pure decoration that never stops moving, so skip it for reduced motion
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!active || reduced) { setPhrases([]); return; }
 
     const spawn = () => {
       const id = _phraseCounter++;
@@ -61,7 +63,7 @@ export function FloatingPhrases({ active }: { active: boolean }) {
   }, [active]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }} aria-hidden="true">
       {phrases.map(p => (
         <div
           key={p.id}

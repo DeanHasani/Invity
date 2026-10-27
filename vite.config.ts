@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => ({
       path.resolve(__dirname, "client"),
       path.resolve(__dirname, "shared"),
       path.resolve(__dirname),],
-      deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "server/**"],
+      // *.local holds untracked secrets (e.g. supabase/paddle-cutover.local), and
+      // the root is allowed above, so it must be denied explicitly.
+      deny: [".env", ".env.*", "*.local", "*.{crt,pem}", "**/.git/**", "server/**"],
     },
   },
   build: {

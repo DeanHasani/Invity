@@ -40,6 +40,14 @@ export function UpgradeModal({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  // Escape closes, but only while choosing a plan, same as the backdrop click
+  useEffect(() => {
+    if (phase !== "plan") return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, onClose]);
+
   // Already Pro (e.g. activated in another tab), so nothing to sell
   useEffect(() => {
     if (isPro && phase === "plan") onClose();
@@ -76,12 +84,16 @@ export function UpgradeModal({
       onClick={phase === "plan" ? onClose : undefined}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Go Pro"
         className="w-full max-w-sm flex flex-col items-center text-center gap-5 p-8 relative"
         style={{ background: "var(--surface, #1a0800)", border: "2px solid rgba(var(--accent-rgb, 240,90,40),0.45)" }}
         onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           className="absolute top-3 right-4 text-white/30 hover:text-white transition-colors text-2xl leading-none"
         >
           ×

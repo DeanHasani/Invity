@@ -29,12 +29,16 @@ Deno.serve(async (req) => {
 
   const { data: { user }, error: authError } =
     await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-  if (authError || !user || user.is_anonymous) return json({ error: "unauthorized" }, 401);
+  if (authError || !user || user.is_anonymous || !user.email) return json({ error: "unauthorized" }, 401);
 
+  // Same lookup as create-invitation and useSubscription: Pro follows the email,
+  // so a second auth user for the same address still reaches its billing.
   const { data: sub } = await supabase
     .from("subscriptions")
     .select("paddle_customer_id, paddle_subscription_id")
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},user_email.eq."${user.email}"`)
+    .order("current_period_end", { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle();
 
   if (!sub) return json({ error: "no_subscription" }, 404);

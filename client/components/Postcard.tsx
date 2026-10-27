@@ -1543,6 +1543,7 @@ function RsvpZone({
   const [name, setName]         = useState("");
   const [note, setNote]         = useState("");
   const [finalName, setFinalName] = useState("");
+  const [failed, setFailed]     = useState(false);
 
   const theme = THEME_RSVP[designId] ?? THEME_RSVP["elegant"];
   const LG = "'Luckiest Guy', cursive";
@@ -1566,8 +1567,15 @@ function RsvpZone({
     if (!choice) return;
     const trimmed = withNote ? note.trim() : "";
     setPhase("submitting");
-    await onRsvp?.(finalName, choice, trimmed || undefined);
-    setPhase("done");
+    setFailed(false);
+    try {
+      await onRsvp?.(finalName, choice, trimmed || undefined);
+      setPhase("done");
+    } catch {
+      // Back to the note step with what they typed, so one tap retries it
+      setFailed(true);
+      setPhase("note-entry");
+    }
   };
 
   // ── Done: full-screen confirmation overlay ────────────────────────────────
@@ -1622,6 +1630,7 @@ function RsvpZone({
             if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(true); }
           }}
           placeholder="Optional, anything they should know?"
+          aria-label="Note for the host (optional)"
           autoFocus
           rows={2}
           disabled={sending}
@@ -1640,6 +1649,11 @@ function RsvpZone({
         >
           {sending ? "SENDING..." : "SEND WITH NOTE"}
         </button>
+        {failed && (
+          <p role="alert" className="text-sm" style={{ color: theme.msgColor, fontFamily: "'Montserrat', sans-serif" }}>
+            That didn't go through. Check your connection and try again.
+          </p>
+        )}
         <button
           onClick={() => submit(false)}
           disabled={sending}
@@ -1670,6 +1684,7 @@ function RsvpZone({
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === "Enter" && confirmName()}
           placeholder="Your name..."
+          aria-label="Your name"
           autoFocus
           className="w-full text-center text-lg bg-transparent border-b-2 py-2 px-3 focus:outline-none placeholder:opacity-30"
           style={{

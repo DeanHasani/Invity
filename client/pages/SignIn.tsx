@@ -11,7 +11,14 @@ const LG_FONT = "'Luckiest Guy', cursive";
  */
 function safeNext(): string {
   const raw = new URLSearchParams(window.location.search).get("next") ?? "/";
-  return /^\/(?!\/)/.test(raw) ? raw : "/";
+  // Resolve like the browser will: a prefix check lets "/\evil.com" through,
+  // which browsers treat as "//evil.com".
+  try {
+    const u = new URL(raw, window.location.origin);
+    return u.origin === window.location.origin ? u.pathname + u.search + u.hash : "/";
+  } catch {
+    return "/";
+  }
 }
 
 /**

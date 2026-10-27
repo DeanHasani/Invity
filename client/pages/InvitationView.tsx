@@ -104,12 +104,13 @@ export default function InvitationView() {
   const handleRsvp = async (name: string, status: "accepted" | "declined", note?: string) => {
     if (!id) return;
 
-    // The edge function records the RSVP (deduped per device) AND emails the host
-    try {
-      await supabase.functions.invoke("notify-rsvp", {
-        body: { invitation_id: id, name, status, note, viewer_token: getViewerToken() },
-      });
-    } catch (_) { /* non-blocking, don't trap the guest on an error */ }
+    // The edge function records the RSVP (deduped per device) AND emails the host.
+    // invoke() reports HTTP failures in `error` instead of throwing, so check it:
+    // a failed RSVP must not be marked as sent, or the guest can never retry.
+    const { error } = await supabase.functions.invoke("notify-rsvp", {
+      body: { invitation_id: id, name, status, note, viewer_token: getViewerToken() },
+    });
+    if (error) throw error;
 
     // Persist response so re-visits show the "already responded" page
     localStorage.setItem(`invity_responded_${id}`, status);

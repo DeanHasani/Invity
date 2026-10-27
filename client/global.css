@@ -1,5 +1,5 @@
-/** @import must precede all other statements */
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Luckiest+Guy&family=Fontdiner+Swanky&family=Vast+Shadow&family=Black+Ops+One&family=Lobster&family=Basic&family=Indie+Flower&family=Rubik+Glitch&family=Spicy+Rice&family=Cormorant+Garamond:wght@500;600&family=Cinzel:wght@600&family=Quicksand:wght@500;700&family=Baloo+2:wght@700&family=Oswald:wght@500;700&family=Germania+One&family=Griffy&display=swap");
+/* Fonts load from a <link> in index.html and signin.html, not an @import here:
+   an @import only starts after this stylesheet arrives, which delays text. */
 
 @keyframes canvasFadeIn { from { opacity:0 } to { opacity:1 } }
 
@@ -14,6 +14,9 @@
   to   { left:130%; }
 }
 .babyshower-train { animation:trainmove 13s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .babyshower-train { animation:none; left:10%; }
+}
 
 /* Step-2 design tile opening into its full preview. Scaled from the top-left
    corner so it reads as that tile growing diagonally into the space, rather
